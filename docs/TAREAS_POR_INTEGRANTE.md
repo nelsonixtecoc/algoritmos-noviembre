@@ -4,12 +4,12 @@
 
 | # | Integrante | Rol | Módulos Responsables | Archivos Clave |
 |---|------------|-----|----------------------|----------------|
-| 1 | **Integrante 1** | Líder Técnico / Core | Game loop, State machine, Camera, Events, Build | `main.py`, `config.py`, `core/game.py`, `core/camera.py`, `core/events.py`, `core/save_load.py` |
-| 2 | **Integrante 2** | Jugador & Combate | Player, Input, Movimiento, Ataque, Proyectiles, Sistema de combate | `entities/player.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base) |
-| 3 | **Integrante 3** | Enemigos & IA | Enemy base, 3 tipos enemigos, Pathfinding, Boss final | `entities/enemy.py`, `entities/enemies/walker.py`, `entities/enemies/shooter.py`, `entities/enemies/charger.py`, `entities/boss.py`, `systems/pathfinding.py` |
-| 4 | **Integrante 4** | Mundo & Niveles | Tilemap, Room, Dungeon, Puertas/Llaves, Level data | `world/tilemap.py`, `world/room.py`, `world/dungeon.py`, `world/level_data/` |
-| 5 | **Integrante 5** | UI & UX | HUD, Menús, Game Over, Victory, Pause, Sonidos | `ui/hud.py`, `ui/menus.py`, `ui/dialogue.py`, integración `assets/sounds/` |
-| 6 | **Integrante 6** | Assets & QA | Sprites, Animaciones, Sonidos, Testing, Bug tracking, Docs | `assets/` (organizado), `utils/animation.py`, `utils/debug.py`, README, testing manual |
+| 1 | **Integrante 1-Nelson** | Líder Técnico / Core | Game loop, State machine, Camera, Events, Build | `main.py`, `config.py`, `core/game.py`, `core/camera.py`, `core/events.py`, `core/save_load.py` |
+| 2 | **Integrante 2-Fabiola** | Jugador & Combate | Player, Input, Movimiento, Ataque, Proyectiles, Sistema de combate | `entities/player.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base) |
+| 3 | **Integrante 3-Lilian** | Enemigos & IA | Enemy base, 3 tipos enemigos, Pathfinding, Boss final | `entities/enemy.py`, `entities/enemies/walker.py`, `entities/enemies/shooter.py`, `entities/enemies/charger.py`, `entities/boss.py`, `systems/pathfinding.py` |
+| 4 | **Integrante 4-Zebedeo** | Mundo & Niveles | Tilemap, Room, Dungeon, Puertas/Llaves, Level data | `world/tilemap.py`, `world/room.py`, `world/dungeon.py`, `world/level_data/` |
+| 5 | **Integrante 5-Aron** | UI & UX | HUD, Menús, Game Over, Victory, Pause, Sonidos | `ui/hud.py`, `ui/menus.py`, `ui/dialogue.py`, integración `assets/sounds/` |
+| 6 | **Integrante 6-Leslie** | Assets & QA | Sprites, Animaciones, Sonidos, Testing, Bug tracking, Docs | `assets/` (organizado), `utils/animation.py`, `utils/debug.py`, README, testing manual |
 
 ---
 

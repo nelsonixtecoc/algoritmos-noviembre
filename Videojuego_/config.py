@@ -1,0 +1,4 @@
+#CONSTANTES para la ventana
+WIDTH = 640
+HEIGHT = 480
+FPS = 30

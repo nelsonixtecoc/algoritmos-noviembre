@@ -1,4 +1,4 @@
-# Reglas de Trabajo en Equipo - RPG Estilo Zelda
+# Reglas de Trabajo en Equipo - Wave Defense
 
 ## 1. Control de Versiones (Git)
 
@@ -7,9 +7,15 @@
 main (protegido, solo PRs)
   ├─ develop (opcional, integra features estables)
   ├─ feature/player-movement
-  ├─ feature/enemy-ai
-  ├─ feature/dungeon-system
-  ├─ feature/boss-fight
+  ├─ feature/weapon-system
+  ├─ feature/enemy-basic
+  ├─ feature/wave-manager
+  ├─ feature/barriers
+  ├─ feature/particles
+  ├─ feature/upgrade-shop
+  ├─ feature/boss-wave5
+  ├─ feature/boss-wave10
+  ├─ feature/ui-hud
   ├─ feature/ui-menus
   ├─ fix/collision-corner-case
   └─ docs/update-readme
@@ -48,9 +54,9 @@ Breve explicación del cambio.
 ## Checklist
 - [ ] Código formateado (`black .` / `ruff check .`)
 - [ ] Sin warnings lint
-- [ ] Probado en 640×480 y 960×720
+- [ ] Probado en 640×480
 - [ ] Actualiza docs si cambia API pública
-- [ ] No rompe tests existentes
+- [ ] No rompe features existentes
 
 ## Screenshots / Video
 (Opcional pero recomendado para UI/visuals)
@@ -61,7 +67,7 @@ Closes #123
 
 ### Code Review
 - **Mínimo 1 aprobación** requerida para merge
-- **Owner de `core/`** (Integrante 1) revisa TODO lo que toque `core/`, `entities/entity.py`, `config.py`
+- **Owner de `core/`** (Nelson) revisa TODO lo que toque `core/`, `entities/entity.py`, `config.py`
 - **Tiempo máximo review:** 24h laborables
 - **Comentarios:** Constructivos, específicos, con sugerencia de código si aplica
 
@@ -88,24 +94,24 @@ from typing import TYPE_CHECKING
 
 import pygame
 
-from core.config import TILE_SIZE, PLAYER_SPEED
+from config import PLAYER_SPEED, PLAYER_HP
 from entities.entity import Entity
 from utils.animation import Animation
 
 if TYPE_CHECKING:
-    from world.room import Room
+    from systems.wave_manager import WaveManager
 
 
 class Player(Entity):
     """Jugador controlado por el usuario."""
 
-    def __init__(self, x: float, y: float, room: Room) -> None:
-        super().__init__(x, y, room)
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y)
         self._speed: float = PLAYER_SPEED
-        self._hp: int = 3
-        self._max_hp: int = 3
+        self._hp: int = PLAYER_HP
+        self._max_hp: int = PLAYER_HP
         self._invulnerable_timer: float = 0.0
-        self._attack_cooldown: float = 0.0
+        self._current_weapon_index: int = 0
         self._setup_animations()
 
     def update(self, dt: float) -> None:
@@ -132,23 +138,27 @@ class Player(Entity):
 ## 3. Estructura de Archivos y Assets
 
 ### Assets - Reglas Críticas
-1. **Solo Integrante 6 modifica `assets/` directamente**
+1. **Solo Leslie (Integrante 6) modifica `assets/` directamente**
 2. **Placeholders día 1:** Rectángulos de colores con nombre final
    ```
-   assets/sprites/player/idle.png          # 16x16 rojo
-   assets/sprites/enemies/walker/idle.png  # 16x16 verde
-   assets/sprites/tiles/wall.png           # 16x16 gris
+   assets/sprites/player/idle.png           # 32x32 azul
+   assets/sprites/enemies/basic/idle.png    # 32x32 rojo
+   assets/sprites/weapons/pistol.png        # 16x16 amarillo
+   assets/sprites/barrier/barrier_1.png     # 40x40 gris
+   assets/sprites/ui/heart_full.png         # 16x16 rojo
    ```
 3. **Naming:** `categoria/nombre_estado[_direccion]_frame.png`
-   - `player/walk_down_1.png`, `player/attack_up_3.png`
-   - `enemies/walker/idle_1.png`
-   - `tiles/ground_grass.png`
+   - `player/idle.png`, `player/walk_down_1.png`, `player/shoot.png`
+   - `enemies/basic/walk_1.png`, `enemies/tank/idle.png`
+   - `weapons/pistol.png`, `weapons/shotgun.png`
+   - `barrier/barrier_1.png` ... `barrier_4.png`
+   - `particles/spark.png`, `particles/smoke.png`
 4. **Formato:** PNG (sprites), OGG/WAV (sonidos), TTF (fuentes)
 5. **Tamaño:** Múltiplos de 16px (16, 32, 48, 64)
 
 ### Spritesheets vs Archivos Individuales
-- **Inicios:** Archivos individuales (más fácil iterar)
-- **Optimización:** Spritesheet + `utils/animation.py` al final si tiempo
+- **Inicio:** Archivos individuales (más fácil iterar)
+- **Optimización:** Spritesheet + `utils/animation.py` en Semana 3-4 si tiempo
 
 ---
 
@@ -162,7 +172,7 @@ class Player(Entity):
 
 **Horario fijo:** Ej. 19:00 todos los días (ajustar a disponibilidad real)
 
-### Weekly Retrospective (Viernes 30 min)
+### Weekly Retrospective (Viernes 30 min - coinciden con Demo)
 **Formato:** Start / Stop / Continue
 - **Start:** Qué deberíamos empezar a hacer
 - **Stop:** Qué no funciona y debemos dejar
@@ -183,7 +193,7 @@ class Player(Entity):
 ### Escalación de Bloqueos
 1. Preguntar en #general / daily
 2. Si > 4h sin resolver → issue GitHub con label `blocked` + @mencionar a quien puede ayudar
-3. Si > 1 día → escalar a Integrante 1 (Líder Técnico) para redistribuir o pair programming
+3. Si > 1 día → escalar a Nelson (Líder Técnico) para redistribuir o pair programming
 
 ---
 
@@ -192,14 +202,14 @@ class Player(Entity):
 ### Testing Manual (Obligatorio)
 - Cada feature probada por **otro integrante** (no el autor)
 - Checklist por PR (ver PR template)
-- **Regression testing** semanal: juega 15 min build actual vs anterior
+- **Regression testing** semanal: juega 15 min build actual vs anterior (viernes)
 
 ### Definición de "Done" (DoD)
 Una tarea/issue está **Done** cuando:
 - [ ] Código en `main` via PR aprobado
 - [ ] `ruff check .` pasa (0 warnings)
 - [ ] `black --check .` pasa
-- [ ] Funciona en resolución base (640×480) y escalada (960×720)
+- [ ] Funciona en resolución base (640×480)
 - [ ] Probado con placeholders Y assets finales (si disponibles)
 - [ ] Docstrings en clases/métodos públicos nuevos
 - [ ] Actualiza `CHANGELOG.md` si feature user-facing
@@ -218,34 +228,44 @@ Una tarea/issue está **Done** cuando:
 ### Interfaces Compartidas (No tocar sin avisar)
 | Archivo | Owner | Quién puede tocar |
 |---------|-------|-------------------|
-| `config.py` | Integrante 1 | Todos (solo leer/añadir constantes) |
-| `entities/entity.py` | Integrante 1 + 2 | Integrante 1, 2, 3 (coordinar) |
-| `core/game.py` | Integrante 1 | Solo Integrante 1 |
-| `core/events.py` | Integrante 1 | Todos (solo emitir/escuchar eventos) |
-| `world/tilemap.py` | Integrante 4 | Integrante 4 + 1 |
+| `config.py` | Nelson | Todos (solo leer/añadir constantes) |
+| `entities/entity.py` | Nelson + Fabiola | Nelson, Fabiola, Lilian, Zebedeo (coordinar) |
+| `core/game.py` | Nelson | Solo Nelson |
+| `core/events.py` | Nelson | Todos (solo emitir/escuchar eventos) |
+| `core/save_load.py` | Nelson | Nelson + Aron (highscores) |
 
-### Event Bus (Desacoplamiento)
-Usar `core/events.py` para comunicación cross-module:
+### Event Bus (Desacoplamiento) - ÚNICA forma cross-module
+Usar `core/events.py` para comunicación entre módulos:
 ```python
 # En player.py - emitir
 from core.events import event_bus, EventType
-event_bus.publish(EventType.PLAYER_ATTACKED, {"damage": 1, "pos": self.pos})
+event_bus.publish(EventType.ENEMY_KILLED, {"gold": 10, "pos": enemy.pos})
 
-# En enemy.py - escuchar
-event_bus.subscribe(EventType.PLAYER_ATTACKED, self.on_player_attacked)
+# En wave_manager.py - escuchar
+event_bus.subscribe(EventType.WAVE_COMPLETE, self.on_wave_complete)
+
+# En particles.py - escuchar
+event_bus.subscribe(EventType.ENEMY_DIED, self.spawn_death_particles)
 ```
-**Eventos definidos:** `PLAYER_ATTACKED`, `ENEMY_DIED`, `PICKUP_COLLECTED`, `ROOM_CHANGED`, `GAME_OVER`, `VICTORY`
+**Eventos definidos (enum `EventType` en `core/events.py`):**
+- `PLAYER_DAMAGED`, `PLAYER_DIED`, `PLAYER_SHOOT`, `WEAPON_SWITCHED`
+- `ENEMY_SPAWNED`, `ENEMY_DIED`, `ENEMY_REACHED_BASE`
+- `BARRIER_DAMAGED`, `BARRIER_DESTROYED`, `BARRIER_REPAIRED`
+- `PICKUP_SPAWNED`, `PICKUP_COLLECTED`
+- `WAVE_STARTED`, `WAVE_COMPLETED`, `BOSS_SPAWNED`, `BOSS_PHASE_CHANGE`
+- `UPGRADE_PURCHASED`, `GOLD_CHANGED`
+- `GAME_OVER`, `VICTORY`, `STATE_CHANGED`
 
-### Dependencias Permitidas (Direccionales)
+### Dependencias Permitidas (Direccionales - NO circulares)
 ```
 core/           →  nadie (base)
 entities/       →  core/
-world/          →  core/, entities/
-systems/        →  core/, entities/, world/
+systems/        →  core/, entities/
 ui/             →  core/, entities/, systems/
 utils/          →  nadie (helpers puros)
+config/         →  nadie (solo JSON data)
 ```
-**Regla:** No imports circulares. Si necesitas, refactoriza a `systems/` o `core/events.py`.
+**Regla:** No imports circulares. Si necesitas, refactoriza a `systems/` o usa `core/events.py`.
 
 ---
 
@@ -256,37 +276,38 @@ utils/          →  nadie (helpers puros)
 - **Si tarea > 8h:** Dividir en subtareas
 - **Si tarea toma 2x estimado:** Parar, reevaluar en daily, pedir ayuda o simplificar
 
-### Scope Freeze
-- **H2 (Fin Semana 2):** Freeze de **nuevas features** (solo bugfixes y pulido)
-- **H3 (Fin Semana 3):** Freeze de **cambios de arquitectura** (solo contenido: rooms, enemies, tuning)
-- **Nuevas ideas:** → Backlog "Post-Entrega" / "v1.1"
+### Scope Freeze (FECHAS INMOVIBLES)
+- **H1 (Fin Semana 2 - 19 Oct):** Freeze de **nuevas mecánicas core** (player, armas, enemigos básicos, oleadas)
+- **H2 (Fin Semana 3 - 26 Oct):** Freeze de **nuevos sistemas** (barreras, power-ups, partículas, upgrade shop)
+- **H3 (Fin Semana 4 - 2 Nov):** Freeze de **contenido nuevo** (solo balanceo, pulido, bugs)
+- **Nuevas ideas:** → Backlog "Post-Entrega" / "v1.1" en GitHub Projects
 
-### Priorización (MoSCoW)
+### Priorización (MoSCoW) - Wave Defense
 | Prioridad | Qué incluye |
 |-----------|-------------|
-| **Must Have** | Core loop, movimiento, combate, 3 enemigos, boss, 6 rooms, game over, victory |
-| **Should Have** | Save/load, HUD completo, sonidos, música, minimapa |
-| **Could Have** | Level up/EXP, dialogue system, secret room, particle effects, screen shake |
-| **Won't Have** | Multiplayer, inventory complejo, crafting, multiple weapons, skill tree |
+| **Must Have** | Player movimiento+armas, 6 enemigos, 2 bosses, oleadas 1-15, barreras, power-ups, upgrade shop, 3 vidas, game over/victory, highscores, HUD, menús, partículas básicas, build .exe |
+| **Should Have** | Screen shake, flash daño, 2ª arena, stats screen post-partida, dificultad ajustable |
+| **Could Have** | Trail partículas por arma, shaders simples, secret wave, cheat codes debug |
+| **Won't Have** | Multiplayer, inventory, crafting, skill tree, diálogo NPCs, save mid-run, online leaderboard |
 
 ---
 
-## 8. Roles y Responsabilidades (Resumen)
+## 8. Roles y Responsabilidades (Resumen - Wave Defense)
 
 | Rol | Quién | Decisiones Finales En |
 |-----|-------|----------------------|
-| **Tech Lead** | Integrante 1 | Arquitectura, `core/`, merge strategy, build, scope freeze |
-| **Player Owner** | Integrante 2 | `entities/player.py`, `systems/combat.py`, feel de controles |
-| **Enemy Owner** | Integrante 3 | `entities/enemies/`, `entities/boss.py`, `systems/pathfinding.py`, IA |
-| **World Owner** | Integrante 4 | `world/`, level design, progresión, tilemap |
-| **UI/UX Owner** | Integrante 5 | `ui/`, menús, HUD, sonidos, juice/feedback |
-| **Assets/QA Owner** | Integrante 6 | `assets/`, placeholders → finales, testing, bug tracking, release |
+| **Tech Lead / Core** | Nelson | Arquitectura, `core/`, `config.py`, `utils/helpers.py`, merge strategy, build, scope freeze, code review owner |
+| **Player & Weapons** | Fabiola | `entities/player.py`, `entities/weapons/`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base), feel controles |
+| **Enemies & Waves** | Lilian | `entities/enemies/`, `entities/boss.py`, `systems/wave_manager.py`, `config/waves.json`, IA, spawning, balanceo oleadas |
+| **Barriers, Pickups & Particles** | Zebedeo | `entities/barrier.py`, `entities/pickup.py`, `systems/particles.py`, `utils/debug.py`, object pooling, screen shake, visual feedback |
+| **UI, Upgrades & Menus** | Aron | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json`, `core/save_load.py` (highscores), sonidos integración |
+| **Assets & QA Lead** | Leslie | `assets/`, `utils/animation.py`, testing manual, bug tracking, README, video demo, placeholders → finales |
 
 **Decisiones técnicas compartidas** (requieren consenso 4/6):
 - Cambiar motor/stack (no aplicar)
-- Cambiar resolución base
-- Cambiar formato tilemap (CSV ↔ TMX)
-- Añadir dependencia externa nueva
+- Cambiar resolución base (640×480)
+- Añadir dependencia externa nueva (solo stdlib + pygame-ce)
+- Cambiar patrón arquitectura (EventBus, StateMachine, etc.)
 
 ---
 
@@ -299,33 +320,32 @@ utils/          →  nadie (helpers puros)
 
 ### Debugging
 - `python -m debugpy --listen 5678 --wait-for-client main.py` + VS Code Debug
-- `utils/debug.py`: `DEBUG = True` → muestra hitboxes, FPS, grid, coords
+- `utils/debug.py`: `DEBUG = True` → muestra hitboxes, FPS, entity counts, wave info
 
 ### Assets
 - **Sprites:** Aseprite (pago), LibreSprite (gratis), Piskel (web)
-- **Tilemap:** Tiled (gratis) + `pytmx`
 - **Sonidos:** sfxr/bfxr (web), Audacity (editar)
 - **Música:** Bosca Ceoil, BeepBox, o assets libres (OpenGameArt, itch.io)
 
 ### Testing
-- Checklist manual en Notion/Excel/GitHub Projects
-- Grabadora: OBS Studio (video demo final)
+- Checklist manual en GitHub Projects / Notion / Excel
+- Grabadora: OBS Studio (video demo final 2 min)
 
 ---
 
-## 10. Checklist de Inicio (Día 1 - Marcar todo)
+## 10. Checklist de Inicio (Día 1 - 6 Oct - Marcar todo)
 
 - [ ] Repo creado y clonado por todos
-- [ ] `.gitignore`, `requirements.txt`, `README.md` básicos
-- [ ] `ruff` + `black` configurados y pasando
+- [ ] `.gitignore`, `requirements.txt` (pygame-ce), `README.md` básicos
+- [ ] `ruff` + `black` configurados y pasando (`ruff check .`, `black --check .`)
 - [ ] `main.py` corre ventana 640×480 60 FPS
-- [ ] `config.py` con constantes base
-- [ ] Tablero GitHub Projects creado con columnas
-- [ ] Issues creados para H0 (Setup) asignados
-- [ ] Daily standup horario acordado
-- [ ] Discord/Slack canales creados
-- [ ] Integrante 6 sube placeholders a `assets/`
-- [ ] Convención commits acordada y documentada
+- [ ] `config.py` con constantes base (WIDTH, HEIGHT, FPS, PLAYER_SPEED, PLAYER_HP, etc.)
+- [ ] Tablero GitHub Projects creado con columnas: Backlog, Todo, In Progress, Review, Done
+- [ ] Issues creados para H0 (Setup) asignados a cada integrante
+- [ ] Daily standup horario acordado y puesto en calendarios
+- [ ] Discord/Slack canales creados (#general, #code-review, #assets, #bugs)
+- [ ] Leslie sube placeholders a `assets/sprites/`, `assets/sounds/`, `assets/fonts/`
+- [ ] Convención commits acordada y documentada en este archivo
 - [ ] PR template en `.github/pull_request_template.md`
 
 ---
@@ -334,21 +354,21 @@ utils/          →  nadie (helpers puros)
 
 | Situación | Acción |
 |-----------|--------|
-| Repo roto (main no compila) | @Integrante 1 immediately, revert último merge si necesario |
+| Repo roto (main no compila) | @Nelson immediately, revert último merge si necesario |
 | Pérdida de trabajo local | `git stash`, `git reflog`, preguntar a compañero si tiene copia |
 | Asset crítico faltante 2 días antes | Placeholder programado + issue `bug/critical` |
 | Integrante enfermo/ausente > 3 días | Redistribuir sus tareas "Must Have" entre resto, cortar "Could Have" |
-| Merge conflict infernal | Pair programming: autor + Integrante 1 resuelven juntos en llamada |
+| Merge conflict infernal | Pair programming: autor + Nelson resuelven juntos en llamada |
 
 ---
 
-**Firmado por el equipo (compromiso verbal en daily):**
+## 12. Firmado por el equipo (compromiso verbal en daily H0)
 
-- Integrante 1 (Core): ________________
-- Integrante 2 (Player): ________________
-- Integrante 3 (Enemies): ________________
-- Integrante 4 (World): ________________
-- Integrante 5 (UI/UX): ________________
-- Integrante 6 (Assets/QA): ________________
+- Nelson (Core): ________________
+- Fabiola (Player/Weapons): ________________
+- Lilian (Enemies/Waves): ________________
+- Zebedeo (Barriers/Particles): ________________
+- Aron (UI/Upgrades): ________________
+- Leslie (Assets/QA): ________________
 
 **Fecha:** ________________

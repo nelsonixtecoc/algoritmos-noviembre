@@ -1,226 +1,219 @@
-# Hitos y Entregas - Cronograma 4 Semanas
+# Hitos y Entregas - Wave Defense (5-6 Semanas)
 
-## Resumen de Hitos
+## Cronograma General
 
-| Hito | Nombre | Deadline | Estado |
-|------|--------|----------|--------|
-| H0 | Setup & Fundación | Día 2 | ⬜ Pendiente |
-| H1 | Core Jugable | Fin Semana 1 | ⬜ Pendiente |
-| H2 | Combate Básico | Fin Semana 2 | ⬜ Pendiente |
-| H3 | Mundo Conectado | Fin Semana 3 | ⬜ Pendiente |
-| H4 | Juego Completo | Fin Semana 4 | ⬜ Pendiente |
-
----
-
-## H0: Setup & Fundación (Días 1-2)
-
-### Objetivo
-Repositorio funcional, equipo sincronizado, pipeline de desarrollo listo.
-
-### Tareas
-- [ ] Crear repo GitHub/GitLab (privado para la clase)
-- [ ] `.gitignore` (Python, pygame, __pycache__, .venv, *.pyc, build/, dist/)
-- [ ] `requirements.txt`:
-  ```txt
-  pygame>=2.5.0
-  pytmx>=3.30  # solo si usan Tiled
-  ```
-- [ ] Configurar `ruff` + `black` (opcional pero recomendado):
-  ```bash
-  pip install ruff black
-  ruff check .
-  black .
-  ```
-- [ ] `main.py` esqueleto: init pygame, ventana 640×480, bucle 60 FPS, salir con ESC
-- [ ] `config.py` con constantes base
-- [ ] Definir convención de commits (Conventional Commits):
-  - `feat:` nueva feature
-  - `fix:` bug fix
-  - `refactor:` refactor sin cambio funcional
-  - `docs:` documentación
-  - `style:` formato, lint
-  - `test:` tests
-- [ ] Crear tablero GitHub Projects / Trello / Notion con columnas: Backlog → To Do → In Progress → Review → Done
-- [ ] Asignar issues iniciales a cada integrante
-- [ ] Daily standup 15 min (presencial o Discord)
-
-### Criterios de Aceptación
-- `python main.py` abre ventana, muestra FPS 60, cierra limpio
-- Todos clonan repo, crean venv, instalan deps, corren sin errores
-- Tablero tiene 1 issue por módulo de la Semana 1
+| Semana | Fechas | Hito | Entregable Principal |
+|--------|--------|------|----------------------|
+| **1** | 6-12 Oct | **H0: Setup & Core Base** | Juego arranca, state machine, event bus, placeholders, git flow |
+| **2** | 13-19 Oct | **H1: Gameplay Core** | Player + 4 armas + 3 enemigos + oleadas 1-5 + HUD + colisiones |
+| **3** | 20-26 Oct | **H2: Systems Completion** | Barreras, power-ups, partículas, upgrade shop, boss wave 5 |
+| **4** | 27 Oct - 2 Nov | **H3: Content Complete** | Todos enemigos, boss wave 10, oleadas 1-15, highscores, menús, assets finales |
+| **5** | 3-9 Nov | **H4: Polish & Defense** | Testing 40+, build .exe, docs, video, ensayo defensa oral |
+| **6** | 10-14 Nov | **Buffer (opcional)** | Solo si hace falta: dificultad, 2ª arena, stats screen, polish extra |
 
 ---
 
-## H1: Core Jugable (Fin Semana 1 - Día 7)
+## Detalle por Hito
 
-### Objetivo
-Jugador se mueve en mundo con colisiones, cámara sigue, state machine funcional.
+### H0: Setup & Core Base (Semana 1 - 6-12 Oct)
+**Objetivo:** Infraestructura lista para que todos trabajen en paralelo sin bloqueos.
 
-### Tareas por Integrante
+| Tarea | Responsable | Criterio Done |
+|-------|-------------|---------------|
+| Repo + .gitignore + requirements.txt + README | Nelson | `git clone` → `pip install -r requirements.txt` → `python main.py` abre ventana 640×480 60 FPS |
+| `config.py` con constantes base | Nelson | WIDTH, HEIGHT, FPS, COLORS, PLAYER_SPEED, PLAYER_HP, etc. |
+| `core/game.py` StateMachine completa | Nelson | MENU → PLAYING → PAUSE → GAME_OVER → VICTORY → MENU (teclas funcionan) |
+| `core/events.py` EventBus funcional | Nelson | `bus.subscribe("TEST", fn)`, `bus.publish("TEST", data)` → fn recibe data |
+| `core/save_load.py` esqueleto | Nelson | `save_highscore(name, score)`, `load_highscores()` → lista dicts |
+| `utils/helpers.py` funciones base | Nelson | clamp, lerp, angle_to, distance, load_spritesheet probadas |
+| Placeholders TODOS sprites | Leslie | `assets/sprites/` con rects colores nombrados: player_idle.png, enemy_basic.png, etc. |
+| Pre-commit: ruff + black | Nelson | `git commit` formatea y lintea automático |
+| Convención código acordada | Todos | type hints, snake_case, docstrings mínimas, commits `feat:`/`fix:` |
 
-| Integrante | Tareas |
-|------------|--------|
-| **Core (1)** | `core/game.py` StateMachine completa, `core/camera.py` follow + límites, `core/events.py` bus básico |
-| **Player (2)** | `entities/entity.py` base, `entities/player.py` movimiento 8 dirs + colisión walls, animaciones placeholder |
-| **Enemigos (3)** | `entities/enemy.py` base (sin IA aún), `systems/pathfinding.py` esqueleto A* |
-| **Mundo (4)** | `world/tilemap.py` carga CSV/TMX, render capas, colisión `walls` layer; 2 habitaciones test |
-| **UI (5)** | `ui/hud.py` esqueleto (dibuja corazones placeholder), `ui/menus.py` MainMenu + PauseMenu funcionales |
-| **Assets (6)** | Placeholders TODOS: player (rect colors), tiles (wall/ground), enemies, UI (corazón, moneda) |
-
-### Integración (Día 6-7)
-- Mergear todo a `main` via PRs
-- Testing: Player nace en Room A, se mueve, choca paredes, cámara sigue, ESC → Pause, click → Resume
-
-### Criterios de Aceptación
-- [ ] Ventana 640×480, 60 FPS estable
-- [ ] Player: WASD/arrows mueve 8 dirs, no atraviesa paredes
-- [ ] Cámara: centra en player, no muestra fuera de bounds
-- [ ] Estados: MENU → PLAYING → PAUSED → PLAYING → MENU
-- [ ] 2 habitaciones cargadas (aunque vacías)
-- [ ] Zero warnings lint
+**Demo viernes 12 oct (30 min sync):**
+- Menú principal navega teclas ↑↓ + Enter
+- Enter → Playing → Player rectángulo se mueve WASD (8 dirs)
+- Teclas 1-4 cambian "arma" (cambia color rectángulo)
+- Espacio → "dispara" (print consola)
+- Escape → Pause → Escape → Playing
+- F3 → toggle hitboxes (debug)
 
 ---
 
-## H2: Combate Básico (Fin Semana 2 - Día 14)
+### H1: Gameplay Core (Semana 2 - 13-19 Oct)
+**Objetivo:** Loop jugable completo: player dispara → enemigos mueren → dan oro → siguiente ola.
 
-### Objetivo
-Combate funcional: player ataca → enemigos reciben daño → mueren → dropean pickups.
+| Tarea | Responsable | Criterio Done |
+|-------|-------------|---------------|
+| `entities/entity.py` base completa | Fabiola | pos, vel, rect, hp, alive, update/draw, take_damage, knockback |
+| `entities/player.py` movimiento + switch arma | Fabiola | WASD 8 dirs, límites pantalla, 1-4 cambia arma, invuln 1s flash |
+| 4 armas Strategy Pattern | Fabiola | Pistola, Escopeta, Rifle, Lanzacohetes → feel distinto (cadencia, spread, daño) |
+| `entities/projectile.py` + subclases | Fabiola | Bala, perdigón, cohete (explota), lifetime, pierce |
+| `systems/combat.py` colisiones | Fabiola | Proyectil choca enemigo → daño → knockback → muerte → EventBus ENEMY_KILLED |
+| 3 enemigos básicos | Lilian | Basic, Tank, Speedy → spawnean, persiguen player/base, atacan, mueren, dan oro |
+| `systems/wave_manager.py` + `waves.json` | Lilian | Lee JSON, spawnea oleadas 1-5, timer 5s entre oleadas, contador vivos en HUD |
+| `ui/hud.py` completo | Aron | 3 corazones, ronda (1/15), enemigos vivos, oro, arma actual + cooldown bar |
+| Integración Player → WaveManager → HUD | Todos | Jugar 5 oleadas sin crashear, oro sube, vidas bajan, Game Over funciona |
 
-### Tareas por Integrante
-
-| Integrante | Tareas |
-|------------|--------|
-| **Core (1)** | `core/save_load.py` save/load JSON (pos, hp, coins, keys, current_room) |
-| **Player (2)** | Ataque espada (hitbox, cooldown, anim), invulnerabilidad 1s (flash), knockback, stats (hp, atk) |
-| **Enemigos (3)** | 3 tipos funcionales: `Walker`, `Shooter`, `Charger` con IA básica + pathfinding simple |
-| **Mundo (4)** | `world/room.py` spawn enemies/pickups, `world/dungeon.py` grafo 4 rooms + transiciones |
-| **UI (5)** | HUD completo: corazones (3), contador monedas, llaves; sonidos básicos integrados |
-| **Assets (6)** | Sprites finales: player (idle/walk/attack/hurt), 3 enemigos, tiles variados, pickups |
-
-### Integración (Día 13-14)
-- Playtest interno: completar dungeon 4 rooms, matar todos enemigos, recoger items
-- Balanceo inicial: HP player/enemigos, daño espada, rate of fire shooter
-
-### Criterios de Aceptación
-- [ ] Player ataca (espacio/click) → hitbox frontal → enemigo pierde HP
-- [ ] Enemigo muere → animación death → drop moneda/corazón aleatorio
-- [ ] 3 tipos enemigos con comportamiento distinto
-- [ ] Player recibe daño → flash rojo → knockback → invulnerabilidad 1s
-- [ ] 3 corazones UI: pierdes 1 por golpe, 0 = Game Over (por ahora reinicia room)
-- [ ] Monedas/llaves se cuentan en HUD
-- [ ] Transiciones room→room funcionan
-- [ ] Save/load: cierras juego → abres → estás en misma room con mismos stats
+**Demo viernes 19 oct:**
+- Partida completa oleadas 1-5
+- 4 armas se sienten distintas
+- 3 enemigos comportamientos visibles
+- HUD muestra todo correctamente
+- Game Over → input nombre → highscore → menú
 
 ---
 
-## H3: Mundo Conectado (Fin Semana 3 - Día 21)
+### H2: Systems Completion (Semana 3 - 20-26 Oct)
+**Objetivo:** Sistemas de profundidad: barreras, power-ups, partículas, upgrades, primer boss.
 
-### Objetivo
-Dungeon completo con llaves/puertas, boss room accesible, HUD/menús pulidos.
+| Tarea | Responsable | Criterio Done |
+|-------|-------------|---------------|
+| `entities/barrier.py` colocar/reparar | Zebedeo | Tecla B ghost preview, click coloca (50 oro), tecla R repara (10 oro/s) |
+| Enemigos atacan barreras prioritarias | Lilian + Zebedeo | Si barrera en rango → ataca barrera → si no, player/base |
+| 4 power-ups temporales | Zebedeo | Speed, Damage, Shield, SlowMo → spawn 15% al matar, duración 3-5s, icono HUD |
+| `systems/particles.py` pool + screen shake | Zebedeo | 200 partículas pre-creadas, tipos: impact, death, explosion, blood. Shake en hit/boss/explosion |
+| `config/upgrades.json` 12-15 upgrades | Aron | Daño, cadencia, vida, velocidad, barrera HP, oro extra, pierce, spread, etc. |
+| `systems/upgrade_shop.py` + `ui/upgrade_ui.py` | Aron | Entre oleadas: 3 cartas aleatorias, teclas 1/2/3 compran, efecto inmediato |
+| Boss oleada 5 (3 fases) | Lilian | HP 500, patrones: radial burst, charge, summon basics. Weak point brilla 3s/fase |
+| `utils/debug.py` | Zebedeo | F3 hitboxes, FPS, entity counts, wave info |
+| Assets week 1-2 integrados | Leslie | Player animado, 3 enemigos básicos, proyectiles, barrera, UI básica |
 
-### Tareas por Integrante
-
-| Integrante | Tareas |
-|------------|--------|
-| **Core (1)** | Polish state transitions, bugfixes cross-module, code review intensivo |
-| **Player (2)** | Polish movimiento (esquinas, deslizamiento), ataque cargado opcional, más animaciones |
-| **Enemigos (3)** | `entities/boss.py` completo con 3 fases, arena boss room, tuning HP/daño/patrones |
-| **Mundo (4)** | Dungeon final: 6 rooms, 2 llaves → 2 puertas → boss room; decoración, variedad |
-| **UI (5)** | Game Over screen, Victory screen, minimapa opcional, screen shake, partículas simples |
-| **Assets (6)** | Boss sprites + animaciones, tileset completo, sonidos finales, música 2 tracks |
-
-### Integración (Día 20-21)
-- Playtest completo: new game → dungeon → boss → victory → game over → retry
-- Bug bash: cada integrante testa 30 min, reporta issues
-
-### Criterios de Aceptación
-- [ ] 6 rooms conectadas lógicamente (llave A abre puerta A, etc.)
-- [ ] Boss room: se desbloquea con 2da llave, boss spawn al entrar
-- [ ] Boss: 3 fases distintas, patterns claros, defeatable sin cheese
-- [ ] Game Over: 0 HP → screen → "Volver a empezar" → reinicia desde room 1 con stats base
-- [ ] Victory: boss muere → pantalla victoria → stats finales → main menu
-- [ ] HUD: no bugs visuales, corazones correctos, monedas persisten
-- [ ] Sonidos: todos los eventos tienen feedback auditivo
-- [ ] Performance: 60 FPS en máquina modesta
+**Demo viernes 26 oct:**
+- Barreras se colocan/reparan, enemigos las destruyen
+- Power-ups spawnean y funcionan
+- Partículas en cada impacto/muerte + screen shake
+- Upgrade Shop aparece oleada 2, 3, 4... compra funciona
+- Boss oleada 5 se vence (3 fases)
 
 ---
 
-## H4: Juego Completo (Fin Semana 4 - Día 28)
+### H3: Content Complete (Semana 4 - 27 Oct - 2 Nov)
+**Objetivo:** Juego completo contenido + assets finales + menús pulidos.
 
-### Objetivo
-Build final distribuible, documentación, testing exhaustivo, entrega.
+| Tarea | Responsable | Criterio Done |
+|-------|-------------|---------------|
+| Enemigo Explosive + Splitter | Lilian | Explosive: muerte = explosión área. Splitter: muerte = 2 mini |
+| Boss oleada 10 (2 fases) | Lilian | HP 800, laser telegraph, homing missiles, arena shrink |
+| `waves.json` oleadas 1-15 balanceadas | Lilian | Dificultad curva suave, variety tipos, oro escalado |
+| `core/save_load.py` highscores completos | Nelson | Top 10 persistente JSON, carga en MainMenu y GameOver |
+| `ui/menus.py` + `ui/game_over.py` + `ui/victory.py` | Aron | Main, Pause, Game Over (input nombre), Victory (stats), Highscores screen |
+| Sonidos + música integrados | Leslie + Aron | SFX: shoot, hit, kill, coin, upgrade, wave, explode, hurt. Música: main + boss loop |
+| Assets finales TODOS integrados | Leslie | 0 placeholders. Spritesheets animados, UI consistente, partículas con sprites |
+| Balanceo final playtesting | Todos | 3-4 partidas completas ajustando `config.py` + `waves.json` + `upgrades.json` |
 
-### Tareas por Integrante
-
-| Integrante | Tareas |
-|------------|--------|
-| **Core (1)** | `pyinstaller --onefile --windowed --add-data "assets;assets" main.py`, test .exe en Windows limpio |
-| **Player (2)** | Balanceo final: playtest 10 runs, ajustar HP/damage/enemy count en `config.py` |
-| **Enemigos (3)** | Bugfixes boss edge cases (stuck, invulnerabilidad, fase transitions) |
-| **Mundo (4)** | Polish level design: checkpoints visuales, secret room opcional, flow natural |
-| **UI (5)** | Menús finales: controles screen, créditos, confirmación salir, high score simple |
-| **Assets (6)** | **QA Lead**: Checklist 50+ casos, regression testing, README final, video demo 2 min |
-
-### Checklist QA Final (Integrante 6 lidera, todos participan)
-
-| Categoría | Casos |
-|-----------|-------|
-| **Core** | Inicio → menú → jugar → pause → resume → menú → salir |
-| **Movimiento** | 8 dirs, diagonales contra pared, esquinas, transiciones room |
-| **Combate** | Espada hit enemy, enemy hit player, knockback, invulnerabilidad, muerte player, muerte enemy |
-| **Pickups** | Corazón cura (max 3), moneda cuenta, llave abre puerta, llave persiste save/load |
-| **Enemigos** | Walker patrol/chase, Shooter dispara/evita, Charger charge/stun, Boss 3 fases |
-| **Mundo** | 6 rooms completables, puertas llave funcionan, boss room lock/unlock |
-| **UI** | HUD correcto siempre, menús navegables teclado+mouse, Game Over/Victoy funcionan |
-| **Persistencia** | Save al cambiar room, Load al iniciar, datos correctos |
-| **Audio** | SFX todos eventos, música loop, volumen, mute opcional |
-| **Performance** | 60 FPS constante, memoria estable 30 min, sin leaks |
-| **Build** | .exe corre en PC sin Python, assets incluidos, antivirus no bloquea |
-
-### Entregables Finales
-1. **Código** en `main` branch, tag `v1.0.0-entrega`
-2. **Build** `dist/ZeldaRPG.exe` (Windows) + `dist/ZeldaRPG` (Linux/Mac si aplica)
-3. **Documentación**:
-   - `README.md` (cómo jugar, controles, build, créditos)
-   - `docs/ANALISIS_Y_DISENO.md`
-   - `docs/TAREAS_POR_INTEGRANTE.md`
-   - `docs/HITOS_Y_ENTREGAS.md` (este archivo)
-   - `docs/REGLAS_EQUIPO.md`
-4. **Video demo** 2 min (gameplay + boss fight)
-5. **Presentación** 10 min (slides: problema, solución, arquitectura, demo, lecciones)
+**Demo viernes 2 nov:**
+- Partida completa 1-15 oleadas + victoria
+- Todos los enemigos + bosses funcionales
+- Menús navegables teclado + mouse
+- Highscores guardan y muestran
+- Assets finales, sonidos, música
+- 0 crashes, 60 FPS
 
 ---
 
-## Buffer de Riesgo (Días 22-28 si hay retrasos)
+### H4: Polish & Defense (Semana 5 - 3-9 Nov)
+**Objetivo:** Calidad de entrega + preparación defensa oral.
 
-| Riesgo | Acción de Contingencia |
-|--------|------------------------|
-| Boss no listo | Simplificar a 2 fases, patrón fijo sin pathfinding |
-| Dungeon incompleto | Reducir a 4 rooms lineales, 1 llave |
-| Assets faltantes | Usar placeholders coloreados + siluetas claras |
-| Save/load roto | Quitar persistencia, solo session actual |
-| Performance baja | Reducir partículas, desactivar debug draw, bajar FPS a 30 |
-| Integrante ausente | Pair programming + redistribuir tareas "stretch" |
+| Tarea | Responsable | Criterio Done |
+|-------|-------------|---------------|
+| Checklist QA 40+ casos | Leslie | Ver `TAREAS_POR_INTEGRANTE.md` → sección Checklist QA |
+| Bugfix regression (0 críticos) | Todos | Issues GitHub cerrados, re-test tras cada fix |
+| PyInstaller build .exe | Nelson | `dist/game.exe` funciona en PC sin Python, assets incluidos |
+| README final | Leslie | Controles, cómo jugar, arquitectura, patrones, créditos, build |
+| Video gameplay 2 min | Leslie | OBS 60 FPS, muestra: menú, gameplay oleadas 1-3, boss 5, upgrade shop, victoria |
+| Docs defensa oral | Cada uno | Diagrama flujo módulo (papel/draw.io), 2 capturas código clave, 1 bug difícil resuelto |
+| Ensayo defensa grupal | Todos | Cada uno explica 3-5 min, preguntas cruzadas, tiempo total < 30 min |
 
----
-
-## Métricas de Seguimiento (Actualizar cada Daily)
-
-| Métrica | Target | Actual |
-|---------|--------|--------|
-| % Código en `main` | 100% Día 28 | 0% |
-| PRs merged/semana | ≥ 12 (2 c/u) | 0 |
-| Bugs críticos abiertos | 0 Día 28 | - |
-| Cobertura testing manual | 50 casos Día 28 | 0 |
-| Build .exe funcional | Día 26 | No |
-| Video demo listo | Día 27 | No |
+**Entrega final viernes 9 nov (o 14 nov si buffer):**
+- Repo tag `v1.0-entrega`
+- `.exe` en `dist/` o release GitHub
+- README + video + diagramas en `/docs/defensa/`
 
 ---
 
-## Comunicación
+### Buffer Semana 6 (10-14 Nov) - Solo si hace falta
+| Opcional | Responsable | Notas |
+|----------|-------------|-------|
+| Segunda arena (layout distinto) | Lilian + Zebedeo | `config/arenas.json`, selector en menú |
+| Stats screen post-partida | Aron | Accuracy, tiempo, kills por tipo, upgrades comprados |
+| Dificultad ajustable (Fácil/Normal/Difícil) | Nelson | Multiplicadores en `config.py` |
+| Polish visual extra | Leslie | Partículas únicas por arma, trails, shaders simples |
+| Bugs edge cases | Todos | Esquinas, spawns raros, memory leaks |
 
-- **Daily standup:** 15 min, mismo horario, todos los días (presencial/Discord)
-- **Weekly retrospective:** Viernes 30 min (qué bien, qué mal, acción mejora)
-- **Canal Discord/Slack:** #general, #code-review, #assets, #bugs, #random
-- **Issues GitHub:** 1 issue = 1 tarea, labels: `feat`, `bug`, `docs`, `blocked`
-- **PR template:** Descripción, cómo testear, screenshots/video, related issues
+---
+
+## Matriz de Responsabilidad por Hito
+
+| Módulo / Feature | H0 | H1 | H2 | H3 | H4 | Owner |
+|------------------|----|----|----|----|----|-------|
+| Repo / Config / Build | ✅ | | | | ✅ | Nelson |
+| Game Loop / State Machine | ✅ | | | | | Nelson |
+| EventBus | ✅ | | | | | Nelson |
+| Save/Load Highscores | | | | ✅ | | Nelson |
+| Entity Base | | ✅ | | | | Fabiola |
+| Player + Movimiento | | ✅ | | | | Fabiola |
+| Armas (4) + Proyectiles | | ✅ | | | | Fabiola |
+| Combate / Colisiones | | ✅ | | | | Fabiola |
+| Enemigos Base + 3 Básicos | | ✅ | | | | Lilian |
+| WaveManager + waves.json | | ✅ | ✅ | ✅ | | Lilian |
+| Enemigos Avanzados (2) | | | ✅ | | | Lilian |
+| Boss Wave 5 + 10 | | | ✅ | ✅ | | Lilian |
+| Barreras | | | ✅ | | | Zebedeo |
+| Power-ups | | | ✅ | | | Zebedeo |
+| Partículas + Screen Shake | | | ✅ | | | Zebedeo |
+| Debug Tools | | | ✅ | | | Zebedeo |
+| HUD | | ✅ | | | | Aron |
+| Menús (Main, Pause, GO, Victory) | | | | ✅ | | Aron |
+| Upgrade Shop + upgrades.json | | | ✅ | | | Aron |
+| Sonidos + Música | | | | ✅ | | Leslie + Aron |
+| Assets (sprites, animaciones) | ✅ placeholders | | | ✅ finales | | Leslie |
+| Animation System | | | | ✅ | | Leslie |
+| QA / Testing / Bug Tracking | | | | ✅ | ✅ | Leslie |
+| README / Video / Docs Defensa | | | | | ✅ | Leslie |
+
+---
+
+## Criterios de Aceptación Globales (Para la nota)
+
+### Técnicos (40%)
+- [ ] Arquitectura modular, patrones aplicados correctamente (Strategy, EventBus, Pool, StateMachine, Data-Driven)
+- [ ] Código limpio: type hints, naming, docstrings, sin warnings linter
+- [ ] Git history significativo: commits atómicos, PRs revisados, ramas cortas
+- [ ] Build funcional .exe + assets embebidos
+- [ ] 60 FPS estables, sin memory leaks, sin crashes
+
+### Jugabilidad (30%)
+- [ ] Loop completo 15 oleadas jugable y divertido
+- [ ] 4 armas se sienten distintas y útiles
+- [ ] 6 enemigos + 2 bosses con comportamientos claros
+- [ ] Progresión: oro → upgrades → poder visible
+- [ ] Dificultad justa (balanceado en config/JSON)
+
+### Presentación (20%)
+- [ ] Assets propios coherentes (estilo pixel art unificado)
+- [ ] Juice: partículas, screen shake, flash, sonidos, feedback claro
+- [ ] UI/UX: menús navegables, HUD legible, upgrade shop entendible
+- [ ] Video 2 min muestra features clave
+
+### Defensa Oral (10%)
+- [ ] Cada integrante explica su módulo 3-5 min con diagrama + código
+- [ ] Responden preguntas: "¿Por qué este patrón?", "¿Cómo debuggeaste X?", "¿Qué cambiarías?"
+- [ ] Equipo demuestra comprensión compartida (no solo dueño del módulo)
+
+---
+
+## Fechas Clave Recordatorio
+
+| Evento | Fecha |
+|--------|-------|
+| Inicio proyecto | 6 Oct (Lunes) |
+| H0 Demo | 12 Oct (Sábado) |
+| H1 Demo | 19 Oct (Sábado) |
+| H2 Demo | 26 Oct (Sábado) |
+| H3 Demo | 2 Nov (Sábado) |
+| **Entrega final (H4)** | **9 Nov (Sábado)** |
+| Buffer opcional | 14 Nov (Sábado) |
+| Defensa oral (estimada) | Semana 10-14 Nov |
+
+> **Nota:** Los sábados son syncs obligatorios 30 min. Si alguien no puede, avisa miércoles previo para redistribuir.

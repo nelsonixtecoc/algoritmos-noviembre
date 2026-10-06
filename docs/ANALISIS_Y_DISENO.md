@@ -1,12 +1,12 @@
-# Documento de Análisis y Diseño - RPG Estilo Zelda (Python + Pygame)
+# Documento de Análisis y Diseño - Wave Defense (Python + Pygame)
 
 ## 1. Visión General del Juego
 
-**Género:** Action-RPG top-down (estilo Zelda clásico: Link to the Past, Link's Awakening)  
-**Plataforma:** PC (Windows/Linux/Mac)  
-**Motor:** Python 3.10+ + Pygame 2.x  
-**Duración estimada:** 15-20 minutos de gameplay  
-**Equipo:** 6 integrantes | **Tiempo:** 4 semanas
+**Género:** Arcade Wave Defense / Twin-stick shooter (un solo escenario, oleadas crecientes)  
+**Plataforma:** PC (Windows)  
+**Motor:** Python 3.10+ + Pygame-ce 2.x  
+**Duración estimada:** 10-15 minutos por partida completa (15 oleadas)  
+**Equipo:** 6 integrantes | **Tiempo:** 5-6 semanas (hasta 7-14 nov)
 
 ---
 
@@ -14,16 +14,22 @@
 
 | Sistema | Descripción | Prioridad |
 |---------|-------------|-----------|
-| **Movimiento** | 8 direcciones, tile-based o pixel-perfect, colisiones con paredes/obstáculos | P0 |
-| **Combate** | Espada (melee), proyectiles opcionales, invulnerabilidad temporal tras daño | P0 |
-| **Vidas/HP** | 3 corazones (3 golpes = game over), pickups de corazón | P0 |
-| **Monedas (Rupias)** | Drop de enemigos/coffres, contador HUD, sin uso en MVP (solo score) | P0 |
-| **Enemigos** | 3 tipos: caminante, disparador, cargador; IA simple (patrulla/persecución) | P0 |
-| **Jefe Final** | 2-3 fases, patrones de ataque distintos, arena dedicada | P0 |
-| **Progresión** | Llaves → abre puertas → nuevas áreas → jefe | P0 |
-| **Game Over** | Pierde todas las vidas → pantalla Game Over → reinicio desde inicio | P0 |
-| **Niveles/EXP** | Opcional MVP: solo HP fijo; si tiempo permite: subir nivel = +1 corazón max | P1 |
-| **Inventario** | Opcional: solo llaves y contador monedas | P1 |
+| **Movimiento Player** | 8 direcciones (WASD), límites de pantalla, cambio arma (teclas 1-4) | P0 |
+| **Sistema de Armas** | 4 armas intercambiables (Strategy Pattern): Pistola, Escopeta, Rifle, Lanzacohetes | P0 |
+| **Disparo / Proyectiles** | Click sostenido o tecla, cooldown por arma, hitbox, daño, knockback | P0 |
+| **Vidas** | 3 corazones (3 golpes = Game Over), invulnerabilidad 1s tras daño | P0 |
+| **Oleadas (Waves)** | Spawner configurado en JSON: tipos, cuenta, HP mult, intervalo spawn | P0 |
+| **Enemigos Básicos** | 3 tipos: Basic (estándar), Tank (HP alto, lento), Speedy (rápido, frágil) | P0 |
+| **Enemigos Avanzados** | Explosive (muere = explosión área), Splitter (muere = 2 mini) | P1 |
+| **Jefes (Boss)** | Oleada 5 y 10: máquina de estados, fases, weak point, telegraphing | P0 |
+| **Barreras** | 3-4 colocables, HP visible, reparables (tecla), objetivo prioritario enemigos | P0 |
+| **Power-ups** | 4 tipos temporales: velocidad, daño, escudo, slow-mo (spawn aleatorio al matar) | P1 |
+| **Tienda Mejoras (Upgrade Shop)** | Entre oleadas: 3 cartas aleatorias (daño, cadencia, vida, velocidad, barrera+) | P0 |
+| **Economía** | Oro por matar → gasto en mejoras y reparar barreras | P0 |
+| **HUD** | Vidas (3 corazones), ronda, enemigos vivos, oro, arma actual, cooldown visual | P0 |
+| **Highscores** | Top 10 persistente en JSON + entrada nombre en Game Over | P1 |
+| **Partículas + Juice** | Pool: impacto, muerte, explosión, humo + screen shake + flash daño | P1 |
+| **Menús** | Main, Pause, Game Over (input nombre), Victory, Upgrade Shop | P0 |
 
 ---
 
@@ -31,64 +37,72 @@
 
 ### 3.1 Estructura de Carpetas
 ```
-zelda_rpg/
-├── main.py                    # Entry point, inicialización
-├── config.py                  # Constantes globales (WIDTH, HEIGHT, FPS, TILE_SIZE, COLORS)
-├── assets/                    # Sprites, sonidos, fuentes (organizados en subcarpetas)
-│   ├── sprites/
-│   │   ├── player/
-│   │   ├── enemies/
-│   │   ├── tiles/
-│   │   └── ui/
-│   ├── sounds/
-│   └── fonts/
+wave_defense/
+├── main.py                    # Entry point, init pygame, Game instance
+├── config.py                  # Constantes: WIDTH, HEIGHT, FPS, COLORS, BALANCE
 ├── core/
-│   ├── game.py                # Game loop, state machine (MENU, PLAYING, PAUSED, GAME_OVER, VICTORY)
-│   ├── events.py              # Event bus / colisiones globales
-│   ├── save_load.py           # JSON save/load (checkpoint o inicio)
-│   └── camera.py              # Cámara que sigue al jugador
+│   ├── game.py                # Game loop, StateMachine (MENU, PLAYING, UPGRADE, GAME_OVER, VICTORY)
+│   ├── events.py              # EventBus simple (publish/subscribe)
+│   └── save_load.py           # JSON: highscores, stats, unlocks
 ├── entities/
-│   ├── entity.py              # Clase base: pos, rect, sprite, hp, alive, update/draw
-│   ├── player.py              # Input, movimiento, ataque, invulnerabilidad, stats
-│   ├── enemy.py               # Clase base enemigo + IA (patrulla, chase, attack)
-│   ├── enemies/               # Subclases: Walker, Shooter, Charger
-│   ├── boss.py                # Jefe final con máquina de estados (fases)
-│   ├── projectile.py          # Flechas, bolas de fuego, espada hitbox
-│   └── pickup.py              # Corazón, moneda, llave
-├── world/
-│   ├── tilemap.py             # Carga CSV/TMX, render, colisiones por capa
-│   ├── room.py                # Habitación individual: enemies, pickups, doors, triggers
-│   ├── dungeon.py             # Grafo de habitaciones, transiciones, llaves/puertas
-│   └── level_data/            # Archivos de mapa (CSV o JSON)
+│   ├── entity.py              # Base: pos, vel, rect, hp, alive, update/draw
+│   ├── player.py              # Input, movimiento 8-dir, switch arma, invulnerabilidad
+│   ├── weapons/               # Strategy Pattern
+│   │   ├── weapon.py          # Abstract base: cooldown, damage, spread, projectile_type
+│   │   ├── pistol.py
+│   │   ├── shotgun.py
+│   │   ├── rifle.py
+│   │   └── launcher.py
+│   ├── projectile.py          # Base proyectil + subclases (bala, perdigón, cohete)
+│   ├── enemies/
+│   │   ├── enemy.py           # Base: target (base/player), state, path_simple
+│   │   ├── basic.py
+│   │   ├── tank.py
+│   │   ├── speedy.py
+│   │   ├── explosive.py
+│   │   ├── splitter.py
+│   │   └── boss.py            # Fases, patrones, weak point
+│   ├── barrier.py             # Sprite con HP, rect, draw_health_bar
+│   └── pickup.py              # Power-up temporal (velocidad, daño, escudo, slow-mo)
 ├── systems/
-│   ├── combat.py              # Resolución daño, knockback, invulnerabilidad
-│   ├── inventory.py           # Llaves, monedas, items clave
-│   ├── leveling.py            # (P1) EXP, level up, stat upgrades
-│   └── pathfinding.py         # A* simple para enemigos que persiguen
+│   ├── wave_manager.py        # Spawner: oleadas configurables, contador vivos, timer
+│   ├── upgrade_shop.py        # Entre oleadas: 3 opciones aleatorias, compra con oro
+│   ├── combat.py              # apply_damage, knockback, collide_projectile_enemy
+│   └── particles.py           # Pool de partículas: sangre, humo, chispas, screen_shake
 ├── ui/
-│   ├── hud.py                 # Corazones, monedas, llaves, minimapa opcional
-│   ├── menus.py               # Main menu, pause, game over, victory
-│   └── dialogue.py            # (P1) Texto NPCs, tutorial
-└── utils/
-    ├── helpers.py             # Distancia, clamping, load_sprite_sheet
-    ├── animation.py           # Manejo de spritesheets y animaciones
-    └── debug.py               # Hitbox toggle, FPS counter
+│   ├── hud.py                 # Corazones, ronda, enemigos vivos, oro, arma actual
+│   ├── menus.py               # MainMenu, PauseMenu, GameOver, Victory
+│   └── upgrade_ui.py          # Pantalla 3 cartas: nombre, desc, costo, key para comprar
+├── utils/
+│   ├── animation.py           # SpriteSheet: frames, duration, loop, flip
+│   ├── helpers.py             # clamp, lerp, angle_to, distance, load_spritesheet
+│   └── debug.py               # Hitbox toggle, FPS, entity counts
+├── config/
+│   ├── waves.json             # Definición oleadas 1-15 + bosses
+│   └── upgrades.json          # Catálogo mejoras comprables
+└── assets/
+    ├── sprites/{player,enemies,weapons,barrier,ui,particles}
+    ├── sounds/{sfx,music}
+    └── fonts/
 ```
 
 ### 3.2 Game Loop & State Machine
 ```
 main.py → Game.init() → Game.run()
   ├─ State.MENU → Menu.handle_events/update/draw
-  ├─ State.PLAYING → World.update + Player.update + Enemies.update + HUD.draw
+  ├─ State.PLAYING → WaveManager.update + Player.update + Enemies.update + Barriers.update + Particles.update + HUD.draw
+  ├─ State.UPGRADE → UpgradeShop.draw + input (1/2/3 para comprar) → auto-vuelve a PLAYING
   ├─ State.PAUSED → Overlay + Menu pausa
-  ├─ State.GAME_OVER → Pantalla + input reiniciar
-  └─ State.VICTORY → Pantalla final + credits
+  ├─ State.GAME_OVER → Input nombre → save highscore → Menu
+  └─ State.VICTORY → Stats finales → highscore → Menu
 ```
 
-### 3.3 Tilemap y Colisiones
-- **Formato:** CSV simple (fácil de editar en Excel/Google Sheets) o Tiled (.tmx) con `pytmx`
-- **Capas:** `ground` (decorativo), `walls` (colisión), `spawns` (jugador, enemigos, pickups), `doors` (transiciones)
-- **Tamaño tile:** 16×16 o 32×32 px (recomendado 16×16 estilo GB/Zelda 1)
+### 3.3 Patrones de Diseño Clave
+- **Strategy Pattern**: `Weapon` base + 4 subclases → `Player` cambia arma en runtime
+- **Event Bus**: `core/events.py` → desacopla Player, Enemies, Combat, Particles, HUD
+- **Object Pool**: `systems/particles.py` → reusa instancias, evita GC
+- **Data-Driven**: `waves.json` + `upgrades.json` → balanceo sin tocar código
+- **State Machine**: `GameState` enum → transiciones claras, fácil debug
 
 ---
 
@@ -96,48 +110,27 @@ main.py → Game.init() → Game.run()
 
 ### Roles y Responsabilidades
 
-| Integrante | Rol Principal | Entregables Clave | Dependencias |
-|------------|---------------|-------------------|--------------|
-| **Líder Técnico / Core** | Arquitectura, game loop, state machine, camera, build/release | `core/game.py`, `core/camera.py`, `core/events.py`, `main.py`, `config.py` | Base para todos |
-| **Jugador & Combate** | Player, movimiento, input, ataque, invulnerabilidad, stats | `entities/player.py`, `entities/projectile.py`, `systems/combat.py` | Core, Entidades base |
-| **Enemigos & IA** | Enemigos base, 3 tipos, pathfinding simple, jefe final | `entities/enemy.py`, `entities/enemies/*.py`, `entities/boss.py`, `systems/pathfinding.py` | Core, Entidades base, Combate |
-| **Mundo & Niveles** | Tilemap, habitaciones, dungeon, transiciones, puertas/llaves | `world/tilemap.py`, `world/room.py`, `world/dungeon.py`, `world/level_data/` | Core, Camera |
-| **UI & UX** | HUD, menús, game over, victory, pause, sonidos básicos | `ui/hud.py`, `ui/menus.py`, `ui/dialogue.py`, integración sonidos | Core, Player stats |
-| **Assets & QA** | Sprites, animaciones, sonidos, testing, bug tracking, doc | `assets/` (organizados), `utils/animation.py`, testing manual, README | Todos (entrega continua) |
-
-### Matriz de Dependencias (orden de implementación)
-
-```
-SEMANA 1                          SEMANA 2                        SEMANA 3                        SEMANA 4
-├─ Core: game loop, states        ├─ Player: movimiento + ataque  ├─ Dungeon: habitaciones +      ├─ Integración completa
-├─ Config + constants             ├─ Combate: daño, knockback     │   transiciones                ├─ Jefe final pulido
-├─ Entity base + sprites          ├─ Enemigos: 3 tipos + IA       ├─ Llaves/puertas + progresión  ├─ Game Over / Victory
-├─ Tilemap básico + colisiones    ├─ Pickups: corazón, moneda     ├─ HUD completo + menús         ├─ Balanceo dificultad
-├─ Camera follow                  ├─ Pathfinding básico           ├─ Save/load (checkpoint)       ├─ Testing + fixes
-│                                 │                                 │                                 ├─ Documentación final
-│                                 │                                 │                                 └─ Build release
-```
-
-### Reglas de Trabajo en Equipo (Anti-conflictos)
-
-1. **Rama por feature:** `feature/player-movement`, `feature/enemy-ai`, `feature/dungeon-system`, etc.
-2. **PR obligatorios:** Ningún push directo a `main`. Mínimo 1 revisión.
-3. **Interfaces compartidas en `core/` y `entities/entity.py`** — no tocar sin avisar.
-4. **Assets centralizados:** `assets/` solo los modifica el integrante de Assets; otros piden cambios por issue.
-5. **Daily sync 15 min:** Qué hice, qué haré, bloqueos.
-6. **Definición de "Done":** Funciona + sin warnings lint + probado en 2 resoluciones.
+| Integrante | Rol Principal | Módulos Responsables | Archivos Clave |
+|------------|---------------|----------------------|----------------|
+| **1 - Nelson** | **Líder Técnico / Core** | Game loop, State machine, EventBus, Save/Load, Build, Code Review | `main.py`, `config.py`, `core/game.py`, `core/events.py`, `core/save_load.py`, `utils/helpers.py` |
+| **2 - Fabiola** | **Player & Weapons System** | Player, Input, Armas (Strategy), Proyectiles, Sistema Combate | `entities/player.py`, `entities/weapons/*.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base) |
+| **3 - Lilian** | **Enemies & Wave System** | Enemigos (6 tipos + Boss), WaveManager, Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
+| **4 - Zebedeo** | **Barriers, Pickups & Particles** | Barreras (HP, reparar), Power-ups, Particle Pool, Screen Shake, Debug | `entities/barrier.py`, `entities/pickup.py`, `systems/particles.py`, `utils/debug.py` |
+| **5 - Aron** | **UI, Upgrades & Menus** | HUD, Menús, Upgrade Shop (data-driven), Highscores, Game Over input | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json` |
+| **6 - Leslie** | **Assets & QA Lead** | Sprites, Animaciones, Sonidos, Testing, Bug Tracking, Docs, Video Demo | `assets/` (organizado), `utils/animation.py`, README, checklist QA |
 
 ---
 
-## 5. Hitos y Entregas (4 Semanas)
+## 5. Hitos y Entregas (5-6 Semanas)
 
 | Hito | Fecha Target | Criterios de Aceptación |
 |------|--------------|-------------------------|
-| **H0: Setup** | Día 1-2 | Repo clonado, pygame corre, ventana 640×480/960×720, FPS 60, git flow definido |
-| **H1: Core Jugable** | Fin Semana 1 | Player se mueve, colisiona con paredes, cámara sigue, cambia estado MENU→PLAYING→PAUSE |
-| **H2: Combate Básico** | Fin Semana 2 | Player ataca → enemigo recibe daño → muere → drop moneda/corazón; 3 tipos enemigos funcionales |
-| **H3: Mundo Conectado** | Fin Semana 3 | 4-6 habitaciones conectadas, llaves abren puertas, boss room accesible, HUD completo |
-| **H4: Juego Completo** | Fin Semana 4 | Jefe final con 2 fases, Game Over/Victoria, save/load, menús pulidos, build .exe/.app |
+| **H0: Setup & Core Base** | Fin Semana 1 (12 oct) | Repo clonado, pygame corre 60 FPS, ventana 640×480, State machine MENU↔PLAYING↔PAUSE, EventBus funciona, placeholders assets, git flow + ruff/black |
+| **H1: Player + Armas + Enemigos Básicos + Oleadas** | Fin Semana 2 (19 oct) | Player: movimiento 8-dir, switch 4 armas, disparo con cooldown. 3 enemigos básicos funcionales. WaveManager lee JSON y spawnea oleadas 1-5. Colisión proyectil-enemigo → daño → muerte → drop oro. HUD completo. |
+| **H2: Barreras + Power-ups + Partículas + Upgrade Shop** | Fin Semana 3 (26 oct) | Barreras colocables/reparables (3-4). 4 power-ups temporales. Particle pool + screen shake. Upgrade Shop entre oleadas: 3 cartas aleatorias desde JSON, compra con oro. Boss oleada 5 funcional. |
+| **H3: Contenido Completo + Polish** | Fin Semana 4 (2 nov) | Enemigos Explosive + Splitter. Boss oleada 10 (2 fases). Oleadas 1-15 balanceadas en JSON. Highscores persistentes top 10 + input nombre. Menús completos (main, pause, game over, victory). Assets finales integrados. |
+| **H4: Testing + Build + Defensa** | Fin Semana 5 (9 nov) | Checklist 40+ casos probados. 0 bugs críticos. PyInstaller .exe funciona. README + diagrama arquitectura + video 2 min. Cada integrante explica su módulo en 3-5 min. |
+| **Buffer / Polish Extra** | Semana 6 (14 nov) | Solo si hace falta: dificultad, edge cases, segunda arena, stats screen. |
 
 ---
 
@@ -145,38 +138,34 @@ SEMANA 1                          SEMANA 2                        SEMANA 3      
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|--------------|---------|------------|
-| Scope creep (añadir features) | Alta | Alto | **Freeze de features en H2**; todo lo nuevo = backlog post-entrega |
-| Merge conflicts en `core/` | Media | Alto | Ramas cortas (<3 días), PRs pequeños, owner de `core/` = Líder Técnico |
-| Assets no llegan a tiempo | Media | Medio | Placeholders programados (rectángulos de colores) desde H0; assets reales en paralelo |
-| Un integrante se retrasa | Alta | Alto | Pair programming semanal; tareas "stretch" asignadas a quien termine antes |
-| Pathfinding muy complejo | Media | Medio | Empezar con IA simple (move toward player + evitar paredes); A* solo si tiempo |
-| Dificultad injusta | Media | Medio | Playtesting interno desde H2; valores en `config.py` para tweak rápido |
+| Scope creep (más armas/enemigos/features) | Alta | Alto | **Feature freeze Semana 3**; todo nuevo = backlog post-entrega |
+| Assets no llegan a tiempo | Media | Medio | Placeholders día 1 (rects colores); Leslie entrega assets semanales |
+| Merge conflicts en `core/` | Media | Alto | Nelson = owner `core/`; ramas < 3 días; PRs pequeños |
+| Un integrante se retrasa | Alta | Alto | Pair programming semanal 1h; micro-tareas reasignables |
+| Balancing injugable | Media | Medio | Valores en `config.py` + `waves.json`; playtest interno viernes |
+| No llegan a ~1000 líneas | Baja | Medio | Si falta: más upgrades, partículas, stats screen, arena 2 |
 
 ---
 
-## 7. Decisiones Técnicas Pendientes (Necesitan Confirmación)
+## 7. Decisiones Técnicas Confirmadas
 
-1. **Tilemap:** ¿CSV casero (más control, menos features) o **Tiled + pytmx** (editor visual, capas, objetos)?  
-   → *Recomendación: Tiled si alguien aprende rápido; si no, CSV.*
-
-2. **Resolución / Escalado:** ¿Ventana fija 640×480 (pixel perfect ×3 = 1920×1440) o escalable con `pygame.transform.scale`?  
-   → *Recomendación: Fija 640×480 surface interna → escalar a pantalla completa.*
-
-3. **Sprites:** ¿Dibujan ustedes (programmer art), usan assets libres (itch.io/opengameart), o mix?  
-   → *Definir paleta y estilo día 1 para consistencia.*
-
-4. **Sonidos:** ¿Generan con sfxr/bfxr o buscan libres?  
-   → *sfxr es rápido y encaja estética retro.*
-
-5. **Build final:** ¿`pyinstaller` (Windows) + `py2app` (Mac) o solo distribución código + requirements?  
-   → *PyInstaller one-file para Windows es estándar.*
+1. **Tilemap/Mapa:** No hay. Un solo escenario fijo (640×480), barreras colocables en posiciones fijas o grid simple.
+2. **Resolución:** Fija 640×480 surface interna → escalar si needed (pixel perfect).
+3. **Sprites:** Assets propios (Leslie). Placeholders día 1. Paleta definida semana 1.
+4. **Sonidos:** sfxr/bfxr para SFX + música libre (opengameart/itch.io).
+5. **Build final:** PyInstaller one-file Windows (`.exe`).
+6. **Control:** WASD movimiento + Mouse aim (click izq disparo) + Teclas 1-4 cambio arma.
+7. **Python:** 3.10+ (match/case en state machine, type hints obligatorios).
 
 ---
 
-## 8. Próximos Pasos Inmediatos (Esta Semana)
+## 8. Próximos Pasos Inmediatos (Semana 1 - Esta semana)
 
-1. **Crear repo** + `.gitignore` + `requirements.txt` (pygame, pytmx si usan Tiled)
-2. **Definir convención de código:** type hints, naming (snake_case), docstrings mínimas
-3. **Configurar linting:** `ruff` o `flake8` + `black` (formateo automático en pre-commit)
-4. **Bocetar primer mapa** en papel/Tiled: 3-4 habitaciones, spawn player, 2 enemigos, 1 cofre, 1 puerta con llave
-5. **Asignar dueños** a cada módulo de la tabla de la Sección 4
+1. **Nelson**: Crear repo + `.gitignore` + `requirements.txt` + README base + `config.py` + `main.py` + `core/game.py` (state machine) + `core/events.py` (EventBus) + `core/save_load.py` (esqueleto) + `utils/helpers.py`
+2. **Todos**: Configurar `ruff` + `black` + pre-commit hook
+3. **Leslie**: Placeholders TODOS sprites (rectángulos colores con nombres correctos en `assets/sprites/`)
+4. **Fabiola**: `entities/entity.py` + `entities/player.py` (movimiento 8-dir, switch arma 1-4, invulnerabilidad)
+5. **Lilian**: `entities/enemies/enemy.py` + `entities/enemies/basic.py` + `config/waves.json` (oleadas 1-5)
+6. **Aron**: `ui/hud.py` (vidas, ronda, oro, arma, enemigos vivos)
+7. **Zebedeo**: `entities/barrier.py` (esqueleto HP + draw) + `systems/particles.py` (pool base)
+8. **Viernes**: **Sync 30 min** → Demo: menú→playing→pause, player se mueve/cambia arma, HUD muestra estado, 1 enemigo básico spawnea y muere al dispararle.

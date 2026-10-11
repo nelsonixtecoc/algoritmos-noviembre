@@ -1,15 +1,15 @@
-# Hitos y Entregas - Wave Defense (5-6 Semanas)
+# Hitos y Entregas - Wave Defense (5-6 Semanas, Scope Reducido ~2000 líneas)
 
 ## Cronograma General
 
 | Semana | Fechas | Hito | Entregable Principal |
 |--------|--------|------|----------------------|
 | **1** | 6-12 Oct | **H0: Setup & Core Base** | Juego arranca, state machine, event bus, placeholders, git flow |
-| **2** | 13-19 Oct | **H1: Gameplay Core** | Player + 4 armas + 3 enemigos + oleadas 1-5 + HUD + colisiones |
-| **3** | 20-26 Oct | **H2: Systems Completion** | Barreras, power-ups, partículas, upgrade shop, boss wave 5 |
-| **4** | 27 Oct - 2 Nov | **H3: Content Complete** | Todos enemigos, boss wave 10, oleadas 1-15, highscores, menús, assets finales |
-| **5** | 3-9 Nov | **H4: Polish & Defense** | Testing 40+, build .exe, docs, video, ensayo defensa oral |
-| **6** | 10-14 Nov | **Buffer (opcional)** | Solo si hace falta: dificultad, 2ª arena, stats screen, polish extra |
+| **2** | 13-19 Oct | **H1: Gameplay Core** | Player + 3 armas + 3 enemigos + oleadas 1-5 + HUD + colisiones |
+| **3** | 20-26 Oct | **H2: Systems Completion** | Barreras fijas, partículas básicas, upgrade shop (6 fijos), boss wave 5 |
+| **4** | 27 Oct - 2 Nov | **H3: Content Complete** | Oleadas 1-10 balanceadas, highscores, menús, assets finales |
+| **5** | 3-9 Nov | **H4: Polish & Defense** | Testing 30+, build .exe, docs, video, ensayo defensa oral |
+| **6** | 10-14 Nov | **Buffer (opcional)** | Solo si hace falta: dificultad, edge cases, polish extra |
 
 ---
 
@@ -33,7 +33,7 @@
 **Demo viernes 12 oct (30 min sync):**
 - Menú principal navega teclas ↑↓ + Enter
 - Enter → Playing → Player rectángulo se mueve WASD (8 dirs)
-- Teclas 1-4 cambian "arma" (cambia color rectángulo)
+- Teclas 1-3 cambian "arma" (cambia color rectángulo)
 - Espacio → "dispara" (print consola)
 - Escape → Pause → Escape → Playing
 - F3 → toggle hitboxes (debug)
@@ -46,44 +46,42 @@
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
 | `entities/entity.py` base completa | Fabiola | pos, vel, rect, hp, alive, update/draw, take_damage, knockback |
-| `entities/player.py` movimiento + switch arma | Fabiola | WASD 8 dirs, límites pantalla, 1-4 cambia arma, invuln 1s flash |
-| 4 armas Strategy Pattern | Fabiola | Pistola, Escopeta, Rifle, Lanzacohetes → feel distinto (cadencia, spread, daño) |
-| `entities/projectile.py` + subclases | Fabiola | Bala, perdigón, cohete (explota), lifetime, pierce |
+| `entities/player.py` movimiento + switch arma | Fabiola | WASD 8 dirs, límites pantalla, 1-3 cambia arma, invuln 1s flash |
+| 3 armas Strategy Pattern | Fabiola | Pistola, Escopeta, Rifle → feel distinto (cadencia, spread, daño) |
+| `entities/projectile.py` + subclases | Fabiola | Bala, perdigón, bala perforante, lifetime, pierce |
 | `systems/combat.py` colisiones | Fabiola | Proyectil choca enemigo → daño → knockback → muerte → EventBus ENEMY_KILLED |
 | 3 enemigos básicos | Lilian | Basic, Tank, Speedy → spawnean, persiguen player/base, atacan, mueren, dan oro |
 | `systems/wave_manager.py` + `waves.json` | Lilian | Lee JSON, spawnea oleadas 1-5, timer 5s entre oleadas, contador vivos en HUD |
-| `ui/hud.py` completo | Aron | 3 corazones, ronda (1/15), enemigos vivos, oro, arma actual + cooldown bar |
+| `ui/hud.py` completo | Aron | 3 corazones, ronda (1/10), enemigos vivos, oro, arma actual (1-3) + cooldown bar |
 | Integración Player → WaveManager → HUD | Todos | Jugar 5 oleadas sin crashear, oro sube, vidas bajan, Game Over funciona |
 
 **Demo viernes 19 oct:**
 - Partida completa oleadas 1-5
-- 4 armas se sienten distintas
+- 3 armas se sienten distintas
 - 3 enemigos comportamientos visibles
-- HUD muestra todo correctamente
+- HUD muestra todo correctamente (ronda 1/10)
 - Game Over → input nombre → highscore → menú
 
 ---
 
 ### H2: Systems Completion (Semana 3 - 20-26 Oct)
-**Objetivo:** Sistemas de profundidad: barreras, power-ups, partículas, upgrades, primer boss.
+**Objetivo:** Sistemas de profundidad: barreras fijas, partículas básicas, upgrade shop simplificado, boss wave 5.
 
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
-| `entities/barrier.py` colocar/reparar | Zebedeo | Tecla B ghost preview, click coloca (50 oro), tecla R repara (10 oro/s) |
+| `entities/barrier.py` 4 fijas (HP, draw) | Zebedeo | 4 posiciones fijas, HP 200, draw_health_bar(), take_damage() |
 | Enemigos atacan barreras prioritarias | Lilian + Zebedeo | Si barrera en rango → ataca barrera → si no, player/base |
-| 4 power-ups temporales | Zebedeo | Speed, Damage, Shield, SlowMo → spawn 15% al matar, duración 3-5s, icono HUD |
-| `systems/particles.py` pool + screen shake | Zebedeo | 200 partículas pre-creadas, tipos: impact, death, explosion, blood. Shake en hit/boss/explosion |
-| `config/upgrades.json` 12-15 upgrades | Aron | Daño, cadencia, vida, velocidad, barrera HP, oro extra, pierce, spread, etc. |
-| `systems/upgrade_shop.py` + `ui/upgrade_ui.py` | Aron | Entre oleadas: 3 cartas aleatorias, teclas 1/2/3 compran, efecto inmediato |
+| `systems/particles.py` pool + screen shake | Zebedeo | 100 partículas pre-creadas, tipos: impact, death. Shake en hit/boss/wave_complete |
+| `config/upgrades.json` 6 upgrades fijos | Aron | Daño +20%, cadencia -15%, vida max +1, velocidad +15%, barrera HP +50%, oro extra +25% |
+| `systems/upgrade_shop.py` + `ui/upgrade_ui.py` | Aron | Entre oleadas: lista 6 fijos, teclas 1-6 compran, efecto inmediato |
 | Boss oleada 5 (3 fases) | Lilian | HP 500, patrones: radial burst, charge, summon basics. Weak point brilla 3s/fase |
 | `utils/debug.py` | Zebedeo | F3 hitboxes, FPS, entity counts, wave info |
 | Assets week 1-2 integrados | Leslie | Player animado, 3 enemigos básicos, proyectiles, barrera, UI básica |
 
 **Demo viernes 26 oct:**
-- Barreras se colocan/reparan, enemigos las destruyen
-- Power-ups spawnean y funcionan
+- Barreras fijas (4), enemigos las destruyen
 - Partículas en cada impacto/muerte + screen shake
-- Upgrade Shop aparece oleada 2, 3, 4... compra funciona
+- Upgrade Shop aparece oleada 2, 3, 4... 6 opciones fijas, compra funciona
 - Boss oleada 5 se vence (3 fases)
 
 ---
@@ -93,18 +91,16 @@
 
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
-| Enemigo Explosive + Splitter | Lilian | Explosive: muerte = explosión área. Splitter: muerte = 2 mini |
-| Boss oleada 10 (2 fases) | Lilian | HP 800, laser telegraph, homing missiles, arena shrink |
-| `waves.json` oleadas 1-15 balanceadas | Lilian | Dificultad curva suave, variety tipos, oro escalado |
+| `waves.json` oleadas 1-10 balanceadas | Lilian | Dificultad curva suave, variety tipos (Basic, Tank, Speedy), oro escalado |
 | `core/save_load.py` highscores completos | Nelson | Top 10 persistente JSON, carga en MainMenu y GameOver |
-| `ui/menus.py` + `ui/game_over.py` + `ui/victory.py` | Aron | Main, Pause, Game Over (input nombre), Victory (stats), Highscores screen |
-| Sonidos + música integrados | Leslie + Aron | SFX: shoot, hit, kill, coin, upgrade, wave, explode, hurt. Música: main + boss loop |
-| Assets finales TODOS integrados | Leslie | 0 placeholders. Spritesheets animados, UI consistente, partículas con sprites |
+| `ui/menus.py` + `ui/game_over.py` | Aron | Main, Pause, Game Over/Victoria compartida (input nombre), Highscores screen |
+| Sonidos + música integrados | Leslie + Aron | SFX: shoot, hit, kill, coin, upgrade, wave, hurt. Música: main + boss loop |
+| Assets finales TODOS integrados | Leslie | 0 placeholders. Sprites animados, UI consistente, partículas con sprites |
 | Balanceo final playtesting | Todos | 3-4 partidas completas ajustando `config.py` + `waves.json` + `upgrades.json` |
 
 **Demo viernes 2 nov:**
-- Partida completa 1-15 oleadas + victoria
-- Todos los enemigos + bosses funcionales
+- Partida completa 1-10 oleadas + victoria
+- 3 enemigos + 1 boss funcionales
 - Menús navegables teclado + mouse
 - Highscores guardan y muestran
 - Assets finales, sonidos, música
@@ -117,7 +113,7 @@
 
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
-| Checklist QA 40+ casos | Leslie | Ver `TAREAS_POR_INTEGRANTE.md` → sección Checklist QA |
+| Checklist QA 30+ casos | Leslie | Ver `TAREAS_POR_INTEGRANTE.md` → sección Checklist QA |
 | Bugfix regression (0 críticos) | Todos | Issues GitHub cerrados, re-test tras cada fix |
 | PyInstaller build .exe | Nelson | `dist/game.exe` funciona en PC sin Python, assets incluidos |
 | README final | Leslie | Controles, cómo jugar, arquitectura, patrones, créditos, build |
@@ -153,19 +149,17 @@
 | Save/Load Highscores | | | | ✅ | | Nelson |
 | Entity Base | | ✅ | | | | Fabiola |
 | Player + Movimiento | | ✅ | | | | Fabiola |
-| Armas (4) + Proyectiles | | ✅ | | | | Fabiola |
+| Armas (3) + Proyectiles | | ✅ | | | | Fabiola |
 | Combate / Colisiones | | ✅ | | | | Fabiola |
 | Enemigos Base + 3 Básicos | | ✅ | | | | Lilian |
 | WaveManager + waves.json | | ✅ | ✅ | ✅ | | Lilian |
-| Enemigos Avanzados (2) | | | ✅ | | | Lilian |
-| Boss Wave 5 + 10 | | | ✅ | ✅ | | Lilian |
-| Barreras | | | ✅ | | | Zebedeo |
-| Power-ups | | | ✅ | | | Zebedeo |
+| Boss Wave 5 | | | ✅ | | | Lilian |
+| Barreras fijas (4) | | | ✅ | | | Zebedeo |
 | Partículas + Screen Shake | | | ✅ | | | Zebedeo |
 | Debug Tools | | | ✅ | | | Zebedeo |
 | HUD | | ✅ | | | | Aron |
-| Menús (Main, Pause, GO, Victory) | | | | ✅ | | Aron |
-| Upgrade Shop + upgrades.json | | | ✅ | | | Aron |
+| Menús (Main, Pause, GO/Victory) | | | | ✅ | | Aron |
+| Upgrade Shop (6 fijos) + upgrades.json | | | ✅ | | | Aron |
 | Sonidos + Música | | | | ✅ | | Leslie + Aron |
 | Assets (sprites, animaciones) | ✅ placeholders | | | ✅ finales | | Leslie |
 | Animation System | | | | ✅ | | Leslie |
@@ -184,10 +178,10 @@
 - [ ] 60 FPS estables, sin memory leaks, sin crashes
 
 ### Jugabilidad (30%)
-- [ ] Loop completo 15 oleadas jugable y divertido
-- [ ] 4 armas se sienten distintas y útiles
-- [ ] 6 enemigos + 2 bosses con comportamientos claros
-- [ ] Progresión: oro → upgrades → poder visible
+- [ ] Loop completo 10 oleadas jugable y divertido
+- [ ] 3 armas se sienten distintas y útiles
+- [ ] 3 enemigos + 1 boss con comportamientos claros
+- [ ] Progresión: oro → upgrades (6 fijos) → poder visible
 - [ ] Dificultad justa (balanceado en config/JSON)
 
 ### Presentación (20%)

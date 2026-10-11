@@ -250,8 +250,7 @@ event_bus.subscribe(EventType.ENEMY_DIED, self.spawn_death_particles)
 **Eventos definidos (enum `EventType` en `core/events.py`):**
 - `PLAYER_DAMAGED`, `PLAYER_DIED`, `PLAYER_SHOOT`, `WEAPON_SWITCHED`
 - `ENEMY_SPAWNED`, `ENEMY_DIED`, `ENEMY_REACHED_BASE`
-- `BARRIER_DAMAGED`, `BARRIER_DESTROYED`, `BARRIER_REPAIRED`
-- `PICKUP_SPAWNED`, `PICKUP_COLLECTED`
+- `BARRIER_DAMAGED`, `BARRIER_DESTROYED`
 - `WAVE_STARTED`, `WAVE_COMPLETED`, `BOSS_SPAWNED`, `BOSS_PHASE_CHANGE`
 - `UPGRADE_PURCHASED`, `GOLD_CHANGED`
 - `GAME_OVER`, `VICTORY`, `STATE_CHANGED`
@@ -277,18 +276,18 @@ config/         →  nadie (solo JSON data)
 - **Si tarea toma 2x estimado:** Parar, reevaluar en daily, pedir ayuda o simplificar
 
 ### Scope Freeze (FECHAS INMOVIBLES)
-- **H1 (Fin Semana 2 - 19 Oct):** Freeze de **nuevas mecánicas core** (player, armas, enemigos básicos, oleadas)
-- **H2 (Fin Semana 3 - 26 Oct):** Freeze de **nuevos sistemas** (barreras, power-ups, partículas, upgrade shop)
+- **H1 (Fin Semana 2 - 19 Oct):** Freeze de **nuevas mecánicas core** (player, 3 armas, 3 enemigos básicos, oleadas)
+- **H2 (Fin Semana 3 - 26 Oct):** Freeze de **nuevos sistemas** (barreras fijas, partículas, upgrade shop 6 fijos)
 - **H3 (Fin Semana 4 - 2 Nov):** Freeze de **contenido nuevo** (solo balanceo, pulido, bugs)
 - **Nuevas ideas:** → Backlog "Post-Entrega" / "v1.1" en GitHub Projects
 
 ### Priorización (MoSCoW) - Wave Defense
 | Prioridad | Qué incluye |
 |-----------|-------------|
-| **Must Have** | Player movimiento+armas, 6 enemigos, 2 bosses, oleadas 1-15, barreras, power-ups, upgrade shop, 3 vidas, game over/victory, highscores, HUD, menús, partículas básicas, build .exe |
-| **Should Have** | Screen shake, flash daño, 2ª arena, stats screen post-partida, dificultad ajustable |
-| **Could Have** | Trail partículas por arma, shaders simples, secret wave, cheat codes debug |
-| **Won't Have** | Multiplayer, inventory, crafting, skill tree, diálogo NPCs, save mid-run, online leaderboard |
+| **Must Have** | Player movimiento+3 armas, 3 enemigos, 1 boss (oleada 5), oleadas 1-10, barreras fijas (4), upgrade shop (6 fijos), 3 vidas, game over/victory, highscores, HUD, menús, partículas básicas, build .exe |
+| **Should Have** | Screen shake, flash daño, dificultad ajustable |
+| **Could Have** | Trail partículas por arma, shaders simples |
+| **Won't Have** | Power-ups, enemigos Explosive/Splitter, boss oleada 10, barreras colocables/reparables, 2ª arena, stats screen, multiplayer, inventory, crafting, skill tree, diálogo NPCs, save mid-run, online leaderboard |
 
 ---
 
@@ -299,7 +298,7 @@ config/         →  nadie (solo JSON data)
 | **Tech Lead / Core** | Nelson | Arquitectura, `core/`, `config.py`, `utils/helpers.py`, merge strategy, build, scope freeze, code review owner |
 | **Player & Weapons** | Fabiola | `entities/player.py`, `entities/weapons/`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base), feel controles |
 | **Enemies & Waves** | Lilian | `entities/enemies/`, `entities/boss.py`, `systems/wave_manager.py`, `config/waves.json`, IA, spawning, balanceo oleadas |
-| **Barriers, Pickups & Particles** | Zebedeo | `entities/barrier.py`, `entities/pickup.py`, `systems/particles.py`, `utils/debug.py`, object pooling, screen shake, visual feedback |
+| **Barriers & Particles** | Zebedeo | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py`, object pooling, screen shake, visual feedback |
 | **UI, Upgrades & Menus** | Aron | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json`, `core/save_load.py` (highscores), sonidos integración |
 | **Assets & QA Lead** | Leslie | `assets/`, `utils/animation.py`, testing manual, bug tracking, README, video demo, placeholders → finales |
 

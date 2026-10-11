@@ -1,0 +1,34 @@
+# Python ejecutable
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# .venv local (Repositorio local)
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Build / Dist
+dist/
+build/
+*.exe
+*.spec
+
+# Logs
+*.log
+
+# Temp
+*.tmp
+*.temp

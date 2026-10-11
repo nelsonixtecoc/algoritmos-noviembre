@@ -18,7 +18,6 @@ class Game:
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
-        self.paused = False
     #inicializar el gamestate dentro de Game
         self.state = GameState.MENU
         self.previous_state = None
@@ -64,19 +63,39 @@ class Game:
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0
-            self.handle_events()
-            if not self.paused:
+            
+            # Input según estado
+            if self.state == GameState.MENU:
+                self.handle_events_menu()
+            elif self.state == GameState.PLAYING:
+                self.handle_events_playing()
+            elif self.state == GameState.PAUSED:
+                self.handle_events_paused()
+            elif self.state == GameState.GAME_OVER:
+                self.handle_events_game_over()
+            
+            # Update según estado
+            if self.state == GameState.PLAYING:
                 self.update(dt)
-            self.draw()
+            
+            # Draw según estado
+            if self.state == GameState.MENU:
+                self.draw_menu()
+            elif self.state == GameState.PLAYING:
+                self.draw_playing()
+            elif self.state == GameState.PAUSED:
+                self.draw_paused()
+            elif self.state == GameState.GAME_OVER:
+                self.draw_game_over()
     
-    def handle_events(self):
+    def handle_events_playing(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 self.keys_pressed.add(event.key)
                 if event.key == pygame.K_ESCAPE:
-                    self.paused = not self.paused
+                    self.change_state(GameState.PAUSED)
                 elif event.key == pygame.K_f:
                     self.toggle_fullscreen()
                 elif event.key == pygame.K_1:
@@ -85,8 +104,6 @@ class Game:
                     self.player["weapon"] = "shotgun"
                 elif event.key == pygame.K_3:
                     self.player["weapon"] = "rifle"
-                elif event.key == pygame.K_4:
-                    self.player["weapon"] = "launcher"
             elif event.type == pygame.KEYUP:
                 self.keys_pressed.discard(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN: #click izquierdo
@@ -95,12 +112,83 @@ class Game:
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.mouse_pressed = False
-        pass #Leer input (WASD, mouse, ESC, etc)
     def toggle_fullscreen(self):
         self.is_fullscreen = not self.is_fullscreen
         flags = pygame.FULLSCREEN if self.is_fullscreen else 0
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
-    
+
+    def handle_events_menu(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    self.change_state(GameState.PLAYING)
+                elif event.key == pygame.K_ESCAPE:
+                    self.running = False
+
+    def handle_events_paused(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.change_state(GameState.PLAYING)
+
+    def handle_events_game_over(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    self.change_state(GameState.MENU)
+                elif event.key == pygame.K_ESCAPE:
+                    self.change_state(GameState.MENU)
+
+    def draw_menu(self):
+        self.screen.fill(BLACK)
+        title = self.big_font.render("Videojuego XDDD", True, WHITE)
+        title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        self.screen.blit(title, title_rect)
+        options = ["JUGAR", "SALIR"]
+        for i, opt in enumerate(options):
+            color = YELLOW if i == 0 else WHITE
+            text = self.font.render(opt, True, color)
+            rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * 40))
+            self.screen.blit(text, rect)
+        pygame.display.flip()
+
+    def draw_playing(self):
+        self.screen.fill(BLACK)
+        if self.player:
+            player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
+            pygame.draw.rect(self.screen, RED, player_rect)
+        pygame.display.flip()
+
+    def draw_paused(self):
+        self.draw_playing()
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.fill(BLACK)
+        overlay.set_alpha(180)
+        self.screen.blit(overlay, (0, 0))
+        text = self.big_font.render("PAUSA", True, WHITE)
+        rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.screen.blit(text, rect)
+        sub = self.font.render("ESC para continuar", True, GRAY)
+        sub_rect = sub.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+        self.screen.blit(sub, sub_rect)
+        pygame.display.flip()
+
+    def draw_game_over(self):
+        self.screen.fill(BLACK)
+        text = self.big_font.render("GAME OVER", True, RED)
+        rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.screen.blit(text, rect)
+        sub = self.font.render("ENTER para volver al menu", True, WHITE)
+        sub_rect = sub.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+        self.screen.blit(sub, sub_rect)
+        pygame.display.flip()
+
     def change_state(self, new_state: GameState):
         """Cambia de estado y avisa al EventBus."""
         old_state = self.state
@@ -225,9 +313,3 @@ class Game:
     def update(self, dt):
         self.update_player(dt)
         #Update de todo, enemies, projectiles, collisions
-        
-    def draw(self):
-        self.screen.fill(BLACK)
-        #pygame.draw.rect(self.screen, RED, self.player_rect) #temporal solo para que se dibuje el cuadrado en la pantalla
-        #dibujar player, enemies, projectiles, HUD
-        pygame.display.flip()

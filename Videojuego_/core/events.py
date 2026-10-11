@@ -43,6 +43,4 @@ class EventBus:
             callback(data)
 
 #Esta es la instancia global
-event_bus = EventBus()
-    
-    
+event_bus = EventBus()    

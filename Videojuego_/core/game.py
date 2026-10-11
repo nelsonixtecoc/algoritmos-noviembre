@@ -2,6 +2,16 @@ import pygame
 import math
 import random
 from config import *
+from core.events import event_bus, EventType
+from enum import Enum
+
+
+class GameState(Enum):
+    MENU = "menu"
+    PLAYING = "playing"
+    UPGRADE = "upgrade"
+    PAUSED = "paused"
+    GAME_OVER = "game_over"
 
 class Game:   
     def __init__(self, screen):
@@ -9,6 +19,9 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.paused = False
+    #inicializar el gamestate dentro de Game
+        self.state = GameState.MENU
+        self.previous_state = None
     #Entidades
         self.player = None
         self.enemies = []
@@ -27,6 +40,8 @@ class Game:
         self.big_font = pygame.font.Font(None, 48)
     #spawn_player
         self.spawn_player()
+    #test cuadrado rojo (borrar en la version final)
+        #self.player_rect = pygame.Rect(WIDTH // 2, HEIGHT // 2, 32, 32) #esto es temporal solo para ver un cuadrado rojo
         
     #configurar el fullscreen
         self.keys_pressed = set()
@@ -85,6 +100,18 @@ class Game:
         self.is_fullscreen = not self.is_fullscreen
         flags = pygame.FULLSCREEN if self.is_fullscreen else 0
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+    
+    def change_state(self, new_state: GameState):
+        """Cambia de estado y avisa al EventBus."""
+        old_state = self.state
+        self.previous_state = old_state
+        self.state = new_state
+        #importeamos de manera local
+        from core.events import event_bus, EventType
+        event_bus.publish(EventType.STATE_CHANGED, {
+            "old_state" : old_state,
+            "new_state" : new_state
+        })
         
     def get_weapon_stats(self, weapon):
         stats = {
@@ -172,9 +199,10 @@ class Game:
         if dx != 0 and dy != 0:
             dx *= 0.7071
             dy *= 0.7071
+        #ligero cambio solo de prueba
         p["x"] += dx * speed * dt
         p["y"] += dy * speed * dt
-        
+        #self.player_rect.center = (p["x"], p["y"]) #Este es temporal para que el cuadrado rojo spawnee en el centro
         #pantalla o campo que podemos ver
         radius = 16
         p["x"] = max(radius, min(WIDTH - radius, p["x"]))
@@ -200,5 +228,6 @@ class Game:
         
     def draw(self):
         self.screen.fill(BLACK)
+        #pygame.draw.rect(self.screen, RED, self.player_rect) #temporal solo para que se dibuje el cuadrado en la pantalla
         #dibujar player, enemies, projectiles, HUD
         pygame.display.flip()

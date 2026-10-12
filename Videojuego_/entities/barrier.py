@@ -16,7 +16,7 @@ from config import (
     YELLOW,
 )
 
-_ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "barrier"
+_ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites" / "barrier"
 
 
 class Barrier:

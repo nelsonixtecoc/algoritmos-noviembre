@@ -158,7 +158,7 @@ class Game:
         title = self.big_font.render("Defiende la Base", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
-        options = ["JUGAR", "SALIR"]
+        options = ["JUGAR", "CONFIGURACIÓN", "RECORDS" "SALIR"]
         for i, opt in enumerate(options):
             color = YELLOW if i == 0 else WHITE
             text = self.font.render(opt, True, color)

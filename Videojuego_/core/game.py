@@ -88,16 +88,21 @@ class Game:
             elif self.state == GameState.GAME_OVER:
                 self.draw_game_over()
     
-    def handle_events_playing(self):
-        for event in pygame.event.get():
+    def handle_global_events(self, events):
+        for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+                self.toggle_fullscreen()
+
+    def handle_events_playing(self):
+        events = pygame.event.get()
+        self.handle_global_events(events)
+        for event in events:
+            if event.type == pygame.KEYDOWN:
                 self.keys_pressed.add(event.key)
                 if event.key == pygame.K_ESCAPE:
                     self.change_state(GameState.PAUSED)
-                elif event.key == pygame.K_f:
-                    self.toggle_fullscreen()
                 elif event.key == pygame.K_1:
                     self.player["weapon"] = "pistol"
                 elif event.key == pygame.K_2:
@@ -106,7 +111,7 @@ class Game:
                     self.player["weapon"] = "rifle"
             elif event.type == pygame.KEYUP:
                 self.keys_pressed.discard(event.key)
-            elif event.type == pygame.MOUSEBUTTONDOWN: #click izquierdo
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.mouse_pressed = True
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -114,32 +119,35 @@ class Game:
                     self.mouse_pressed = False
     def toggle_fullscreen(self):
         self.is_fullscreen = not self.is_fullscreen
-        flags = pygame.FULLSCREEN if self.is_fullscreen else 0
+        if self.is_fullscreen:
+            flags = pygame.FULLSCREEN | pygame.SCALED
+        else:
+            flags = 0
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
 
     def handle_events_menu(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN:
+        events = pygame.event.get()
+        self.handle_global_events(events)
+        for event in events:
+            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     self.change_state(GameState.PLAYING)
                 elif event.key == pygame.K_ESCAPE:
                     self.running = False
 
     def handle_events_paused(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN:
+        events = pygame.event.get()
+        self.handle_global_events(events)
+        for event in events:
+            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.change_state(GameState.PLAYING)
 
     def handle_events_game_over(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN:
+        events = pygame.event.get()
+        self.handle_global_events(events)
+        for event in events:
+            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     self.change_state(GameState.MENU)
                 elif event.key == pygame.K_ESCAPE:
@@ -147,7 +155,7 @@ class Game:
 
     def draw_menu(self):
         self.screen.fill(BLACK)
-        title = self.big_font.render("Videojuego XDDD", True, WHITE)
+        title = self.big_font.render("Defiende la Base", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
         options = ["JUGAR", "SALIR"]

@@ -158,7 +158,7 @@ class Game:
         title = self.big_font.render("Defiende la Base", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
-        options = ["JUGAR", "CONFIGURACIÓN", "RECORDS" "SALIR"]
+        options = ["JUGAR", "CONFIGURACIÓN", "RECORDS", "SALIR"]
         for i, opt in enumerate(options):
             color = YELLOW if i == 0 else WHITE
             text = self.font.render(opt, True, color)
@@ -240,16 +240,6 @@ class Game:
                 "pierce": WEAPON_RIFLE_PIERCE,
                 "explosion_radius": 0,
                 "color": CYAN
-            },
-            "launcher": {
-                "cooldown": WEAPON_LAUNCHER_COOLDOWN,
-                "damage": WEAPON_LAUNCHER_DAMAGE,
-                "spread": 0.0,
-                "speed": WEAPON_LAUNCHER_PROJECTILE_SPEED,
-                "pellets": 1,
-                "pierce": 0,
-                "explosion_radius": WEAPON_LAUNCHER_EXPLOSION_RADIUS,
-                "color": RED
             }
         }
         return stats.get(weapon, stats["pistol"])

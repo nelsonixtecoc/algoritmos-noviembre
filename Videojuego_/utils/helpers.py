@@ -1,7 +1,8 @@
 import math
 import random
-from typing import Tuple, List
+
 import pygame  # solo para load_spritesheet
+
 
 def clamp(value: float, min_val: float, max_val: float) -> float:
     """Limita ``value`` al rango ``[min_val, max_val]``.
@@ -41,7 +42,7 @@ def lerp(a: float, b: float, t: float) -> float:
     return a + (b - a) * t
 
 
-def angle_to(from_pos: Tuple[float, float], to_pos: Tuple[float, float]) -> float:
+def angle_to(from_pos: tuple[float, float], to_pos: tuple[float, float]) -> float:
     """Calcula el ángulo en radianes desde ``from_pos`` hacia ``to_pos``.
 
     Args:
@@ -62,7 +63,7 @@ def angle_to(from_pos: Tuple[float, float], to_pos: Tuple[float, float]) -> floa
     return math.atan2(dy, dx)
 
 
-def distance(a: Tuple[float, float], b: Tuple[float, float]) -> float:
+def distance(a: tuple[float, float], b: tuple[float, float]) -> float:
     """Distancia euclidiana entre dos puntos 2D.
 
     Args:
@@ -89,8 +90,8 @@ def load_spritesheet(
     columns: int = None,
     rows: int = None,
     scale: float = 1.0,
-    colorkey: Tuple[int, int, int] = None
-) -> List[pygame.Surface]:
+    colorkey: tuple[int, int, int] = None
+) -> list[pygame.Surface]:
     """Corta un spritesheet en frames individuales.
 
     Args:
@@ -143,7 +144,7 @@ def random_spawn_point(
     screen_width: int,
     screen_height: int,
     margin: int = 50
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Genera posición aleatoria en el borde de la pantalla (fuera de vista).
 
     Útil para spawnear enemigos que entran desde fuera.

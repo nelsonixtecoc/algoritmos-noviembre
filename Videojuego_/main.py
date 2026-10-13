@@ -1,7 +1,8 @@
-import pygame
 import sys
 
-from config import WIDTH, HEIGHT, FPS
+import pygame
+
+from config import HEIGHT, WIDTH
 from core.game import Game
 
 

@@ -1,9 +1,11 @@
-import pygame
 import math
 import random
-from config import *
-from core.events import event_bus, EventType
 from enum import Enum
+
+import pygame
+
+from config import *
+from core.events import EventType, event_bus
 
 
 class GameState(Enum):
@@ -13,7 +15,7 @@ class GameState(Enum):
     PAUSED = "paused"
     GAME_OVER = "game_over"
 
-class Game:   
+class Game:
     def __init__(self, screen):
         self.screen = screen
         self.clock = pygame.time.Clock()
@@ -34,19 +36,19 @@ class Game:
         self.enemies_killed = 0
         self.wave_timer = 0.0
         self.spawn_timer = 0.0
-    #fonts / tipografia 
+    #fonts / tipografia
         self.font = pygame.font.Font(None, 24)
         self.big_font = pygame.font.Font(None, 48)
     #spawn_player
         self.spawn_player()
     #test cuadrado rojo (borrar en la version final)
         #self.player_rect = pygame.Rect(WIDTH // 2, HEIGHT // 2, 32, 32) #esto es temporal solo para ver un cuadrado rojo
-        
+
     #configurar el fullscreen
         self.keys_pressed = set()
         self.mouse_pressed = False
         self.is_fullscreen = False
-        
+
     def spawn_player(self):
         self.player = {
             "x" : WIDTH // 2,
@@ -58,12 +60,12 @@ class Game:
             "invuln_timer" : 0.0,
             "speed" : PLAYER_SPEED
         }
-    
+
         #run
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0
-            
+
             # Input según estado
             if self.state == GameState.MENU:
                 self.handle_events_menu()
@@ -73,11 +75,11 @@ class Game:
                 self.handle_events_paused()
             elif self.state == GameState.GAME_OVER:
                 self.handle_events_game_over()
-            
+
             # Update según estado
             if self.state == GameState.PLAYING:
                 self.update(dt)
-            
+
             # Draw según estado
             if self.state == GameState.MENU:
                 self.draw_menu()
@@ -87,7 +89,7 @@ class Game:
                 self.draw_paused()
             elif self.state == GameState.GAME_OVER:
                 self.draw_game_over()
-    
+
     def handle_global_events(self, events):
         for event in events:
             if event.type == pygame.QUIT:
@@ -203,12 +205,11 @@ class Game:
         self.previous_state = old_state
         self.state = new_state
         #importeamos de manera local
-        from core.events import event_bus, EventType
         event_bus.publish(EventType.STATE_CHANGED, {
             "old_state" : old_state,
             "new_state" : new_state
         })
-        
+
     def get_weapon_stats(self, weapon):
         stats = {
             "pistol": {
@@ -243,18 +244,18 @@ class Game:
             }
         }
         return stats.get(weapon, stats["pistol"])
-    
+
     def fire_weapon(self, angle):
         stats = self.get_weapon_stats(self.player["weapon"])
-        
+
         for i in range(stats["pellets"]):
             spread_angle = angle + random.uniform(-stats["spread"], stats["spread"])
             vx = math.cos(spread_angle) * stats["speed"]
             vy = math.sin(spread_angle) * stats["speed"]
-            
+
             spawn_x = self.player["x"] + math.cos(spread_angle) * 20
             spawn_y = self.player["y"] + math.sin(spread_angle) * 20
-            
+
             projectile = {
                 "x" : spawn_x,
                 "y" : spawn_y,
@@ -269,18 +270,18 @@ class Game:
             }
             self.projectiles.append(projectile)
         self.player["cooldown"] = stats["cooldown"]
-    
+
     def update_player(self, dt):
         p = self.player
         speed = p["speed"]
-        
+
         #movimiento WASD
         dx = dy = 0
         if pygame.K_w in self.keys_pressed: dy -= 1
         if pygame.K_s in self.keys_pressed: dy += 1
         if pygame.K_a in self.keys_pressed: dx -= 1
         if pygame.K_d in self.keys_pressed: dx += 1
-        
+
         #normalizar diagona
         if dx != 0 and dy != 0:
             dx *= 0.7071
@@ -293,16 +294,16 @@ class Game:
         radius = 16
         p["x"] = max(radius, min(WIDTH - radius, p["x"]))
         p["y"] = max(radius, min(HEIGHT - radius, p["y"]))
-        
+
         #apuntar con mouse
         mouse_x, mouse_y = pygame.mouse.get_pos()
         angle = math.atan2(mouse_y - p["y"], mouse_x -p["x"])
         p["aim_angle"] = angle
-        
+
         #disparar si click y cooldown estan listos
         if self.mouse_pressed and p["cooldown"] <= 0:
             self.fire_weapon(angle)
-            
+
         #timers
         if p["cooldown"] > 0:
             p["cooldown"] -= dt

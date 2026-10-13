@@ -1,5 +1,7 @@
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Any
+from typing import Any
+
 
 #tipos de eventos
 class EventType(Enum):
@@ -26,14 +28,14 @@ class EventType(Enum):
     GAME_OVER = "game_over"
     VICTORY = "victory"
     STATE_CHANGED = "state_changed"
-    
+
     #el BUS
 class EventBus:
     def __init__(self): #EL eventType es la lista de funciones que escuchan
         self._listeners: dict[EventType, list[Callable]] = {} #se inicia la lista vacia por cada tipo
         for event_type in EventType:
             self._listeners[event_type] = []
-        
+
     def subscribe(self, event_type: EventType, callback: Callable):
         """Un modulo dice: 'avísame cuando pase X'"""
         self._listeners[event_type].append(callback)
@@ -43,4 +45,4 @@ class EventBus:
             callback(data)
 
 #Esta es la instancia global
-event_bus = EventBus()   
+event_bus = EventBus()

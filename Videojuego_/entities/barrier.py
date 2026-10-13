@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 import pygame
 
@@ -61,9 +61,9 @@ class Barrier:
     def can_place(
         cls,
         pos: tuple[float, float],
-        barriers: Optional[Sequence["Barrier"]] = None,
+        barriers: Sequence[Barrier] | None = None,
         margin: int = 0,
-    ) -> Optional[tuple[int, int]]:
+    ) -> tuple[int, int] | None:
         """Devuelve la posicion alineada al grid si es valida, o ``None``."""
         snapped = cls.snap_to_grid(pos)
         probe = pygame.Rect(0, 0, cls.SIZE + margin * 2, cls.SIZE + margin * 2)
@@ -108,7 +108,7 @@ class Barrier:
             return "barrier_3.png"
         return "barrier_4.png"
 
-    def sprite(self) -> Optional[pygame.Surface]:
+    def sprite(self) -> pygame.Surface | None:
         """Carga (con cache) el sprite correspondiente, o ``None`` si no existe."""
         name = self.sprite_name()
         if name in self._SPRITE_CACHE:

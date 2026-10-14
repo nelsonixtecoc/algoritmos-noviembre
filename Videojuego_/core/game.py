@@ -15,6 +15,7 @@ class GameState(Enum):
     PAUSED = "paused"
     GAME_OVER = "game_over"
 
+
 class Game:
     def __init__(self, screen):
         self.screen = screen
@@ -41,6 +42,7 @@ class Game:
         self.big_font = pygame.font.Font(None, 48)
     #spawn_player
         self.spawn_player()
+        self.spawn_barriers()
     #test cuadrado rojo (borrar en la version final)
         #self.player_rect = pygame.Rect(WIDTH // 2, HEIGHT // 2, 32, 32) #esto es temporal solo para ver un cuadrado rojo
 
@@ -60,6 +62,37 @@ class Game:
             "invuln_timer" : 0.0,
             "speed" : PLAYER_SPEED
         }
+     
+    def spawn_barriers(self):
+        """crear 4 barrerar fijas en su posición por defecto"""
+        from entities.barrier import Barrier
+        for pos in Barrier.default_positions():
+            self.barriers.append(Barrier(*pos))
+
+    def spawn_enemy(self, enemy_type="basic"):
+        """Spawnea un enemigo en un borde aleatorio de la pantalla."""
+        from utils.helpers import random_spawn_point
+        
+        x, y = random_spawn_point(WIDTH, HEIGHT, margin=50)
+        
+        if enemy_type == "basic":
+            enemy = {
+                "x": x,
+                "y": y,
+                "hp": ENEMY_BASIC_HP,
+                "max_hp": ENEMY_BASIC_HP,
+                "speed": ENEMY_BASIC_SPEED,
+                "damage": ENEMY_BASIC_DAMAGE,
+                "gold": ENEMY_BASIC_GOLD,
+                "type": "basic",
+                "color": (200, 50, 50),  # rojo oscuro para basic
+                "radius": 16,
+                "knockback_resist": 0.0,
+            }
+        # TODO: añadir "tank", "speedy" luego
+        
+        self.enemies.append(enemy)
+        event_bus.publish(EventType.ENEMY_SPAWNED, {"enemy": enemy, "type": enemy_type})
 
         #run
     def run(self):
@@ -170,6 +203,22 @@ class Game:
 
     def draw_playing(self):
         self.screen.fill(BLACK)
+        # Proyectiles (círculos de colores)
+        for proj in self.projectiles:
+            pygame.draw.circle(self.screen, proj["color"], (int(proj["x"]), int(proj["y"])), proj["radius"])
+        # Enemigos
+        for enemy in self.enemies:
+            pygame.draw.circle(self.screen, enemy["color"], (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
+            # Barra de vida simple
+            if enemy["hp"] < enemy["max_hp"]:
+                bar_w = 30
+                ratio = enemy["hp"] / enemy["max_hp"]
+                pygame.draw.rect(self.screen, (64, 64, 64), (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
+                pygame.draw.rect(self.screen, (0, 255, 0), (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, int(bar_w * ratio), 4))
+        # Barreras
+        for barrier in self.barriers:
+            barrier.draw(self.screen)
+        # Player (cuadrado rojo)
         if self.player:
             player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
             pygame.draw.rect(self.screen, RED, player_rect)
@@ -309,6 +358,133 @@ class Game:
             p["cooldown"] -= dt
         if p["invuln_timer"] > 0:
             p["invuln_timer"] -= dt
+             
+    def update_projectiles(self, dt):
+        """Mueve los proyectiles y los borra cuando salen de la pantalla"""
+        for proj in self.projectiles[:]:  # copia para borrar mientras iteramos
+            proj["x"] += proj["vx"] * dt
+            proj["y"] += proj["vy"] * dt
+            # margen fuera de pantalla
+            margin = 50
+            if (proj["x"] < -margin or proj["x"] > WIDTH + margin or
+                proj["y"] < -margin or proj["y"] > HEIGHT + margin):
+                self.projectiles.remove(proj)
+
+    def update_enemies(self, dt):
+        """Mueve enemigos hacia el player/barreras y chequea colisiones."""
+        if not self.player:
+            return
+        
+        px, py = self.player["x"], self.player["y"]
+        
+        for enemy in self.enemies[:]:
+            # Buscar barrera viva más cercana
+            target_barrier = None
+            min_dist = float('inf')
+            for barrier in self.barriers:
+                if barrier.alive:
+                    bdx = barrier.x - enemy["x"]
+                    bdy = barrier.y - enemy["y"]
+                    bdist = math.hypot(bdx, bdy)
+                    if bdist < min_dist:
+                        min_dist = bdist
+                        target_barrier = barrier
+            
+            # Objetivo: barrera cercana (rango 200px) o player
+            if target_barrier and min_dist < 200:
+                tx, ty = target_barrier.x, target_barrier.y
+            else:
+                tx, ty = px, py
+            
+            # Vector hacia objetivo
+            dx = tx - enemy["x"]
+            dy = ty - enemy["y"]
+            dist = math.hypot(dx, dy)
+            
+            if dist > 0:
+                # Normalizar y mover
+                dx /= dist
+                dy /= dist
+                enemy["x"] += dx * enemy["speed"] * dt
+                enemy["y"] += dy * enemy["speed"] * dt
+            
+            # Colisión con barrera (atacar)
+            for barrier in self.barriers:
+                if barrier.alive:
+                    # Rect del enemigo para colisión
+                    enemy_rect = pygame.Rect(enemy["x"] - enemy["radius"], enemy["y"] - enemy["radius"], enemy["radius"] * 2, enemy["radius"] * 2)
+                    if barrier.rect.colliderect(enemy_rect):
+                        destroyed = barrier.take_damage(enemy["damage"])
+                        event_bus.publish(EventType.BARRIER_DAMAGED, {"barrier": barrier, "damage": enemy["damage"]})
+                        if destroyed:
+                            event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
+                        break  # Una barrera por frame
+            
+            # Colisión con player (daño)
+            dist_to_player = math.hypot(px - enemy["x"], py - enemy["y"])
+            if dist_to_player < enemy["radius"] + 16:  # 16 = radio player
+                self.damage_player(enemy["damage"])
+                # Knockback leve al player
+                if dist_to_player > 0:
+                    ndx = (enemy["x"] - px) / dist_to_player
+                    ndy = (enemy["y"] - py) / dist_to_player
+                    self.player["x"] += ndx * 50 * dt
+                    self.player["y"] += ndy * 50 * dt
+
+    def update_barriers(self, dt):
+        """Actualizar las barreras y que se eliminen las destruidas"""
+        for barrier in self.barriers[:]:
+            if not barrier.alive:
+                self.barriers.remove(barrier)
+                event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
+
+    def check_projectile_enemy_collisions(self):
+        for proj in self.projectiles[:]:
+            for enemy in self.enemies[:]:
+                dx = proj["x"] - enemy["x"]
+                dy = proj["y"] - enemy["y"]
+                dist = math.hypot(dx, dy)
+                
+                if dist < proj["radius"] + enemy["radius"]:
+                    # Daño
+                    enemy["hp"] -= proj["damage"]
+                    # Proyectil perforante?
+                    if proj["pierce"] <= 0:
+                        self.projectiles.remove(proj)
+                    else:
+                        proj["pierce"] -= 1
+                    
+                    # Muerte
+                    if enemy["hp"] <= 0:
+                        self.enemies.remove(enemy)
+                        self.gold += enemy["gold"]
+                        self.enemies_killed += 1
+                        event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy["gold"]})
+                    break  # Un proyectil golpea un enemigo por frame
+
+    def damage_player(self, amount):
+        if not self.player or self.player["invuln_timer"] > 0:
+            return
+        self.player["hp"] -= amount
+        self.player["invuln_timer"] = PLAYER_INVULN_TIME  # 1 segundo
+        event_bus.publish(EventType.PLAYER_DAMAGED, {"damage": amount, "hp": self.player["hp"]})
+        
+        if self.player["hp"] <= 0:
+            self.player_died()
+
+    def player_died(self):
+        event_bus.publish(EventType.PLAYER_DIED, {})
+        self.change_state(GameState.GAME_OVER)
+
     def update(self, dt):
         self.update_player(dt)
-        #Update de todo, enemies, projectiles, collisions
+        self.update_projectiles(dt)
+        self.update_enemies(dt)
+        self.check_projectile_enemy_collisions()
+        self.update_barriers(dt)
+        
+        # Spawn timer simple (1 enemigo cada 2 segundos)
+        self.spawn_timer += dt
+        if self.spawn_timer >= 2.0:
+            self.spawn_enemy("basic")
+            self.spawn_timer = 0.0

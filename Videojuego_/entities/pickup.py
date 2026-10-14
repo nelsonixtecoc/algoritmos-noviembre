@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import pygame
 
@@ -56,7 +55,7 @@ class Pickup:
         raise NotImplementedError
 
     @classmethod
-    def _load_sprite(cls, key: str, path: Path) -> Optional[pygame.Surface]:
+    def _load_sprite(cls, key: str, path: Path) -> pygame.Surface | None:
         """Carga (con cache) un sprite si existe; si no, devuelve None."""
         if key in cls._SPRITE_CACHE:
             return cls._SPRITE_CACHE[key]

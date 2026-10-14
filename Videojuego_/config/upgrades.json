@@ -1,0 +1,67 @@
+{
+    "upgrades": [
+        {
+            "id": "piercing_shots",
+            "name": "Balas Perforantes",
+            "description": "Las balas del jugador atraviesan enemigos",
+            "cost": 100,
+            "effect": "pierce",
+            "effect_value": 1,
+            "type": "weapon",
+            "weapon": "pistol",
+            "permanent": true
+        },
+        {
+            "id": "shotgun_spread",
+            "name": "Mayor Distancia de Escopeta",
+            "description": "La escopeta tiene menor dispersión y alcanza mayor distancia",
+            "cost": 150,
+            "effect": "spread",
+            "effect_value": -0.15,
+            "type": "weapon",
+            "weapon": "shotgun",
+            "permanent": true
+        },
+        {
+            "id": "rifle_damage",
+            "name": "Rifle de Precisión",
+            "description": "El rifle causa más daño por bala",
+            "cost": 200,
+            "effect": "damage",
+            "effect_value": 5,
+            "type": "weapon",
+            "weapon": "rifle",
+            "permanent": true
+        },
+        {
+            "id": "starting_gold",
+            "name": "Inicialización de Monedas",
+            "description": "Empiezas con más oro en la próxima partida",
+            "cost": 300,
+            "effect": "starting_gold_bonus",
+            "effect_value": 50,
+            "type": "persistent",
+            "permanent": false
+        },
+        {
+            "id": "max_health",
+            "name": "Vida Máxima Increíble",
+            "description": "Aumenta la vida máxima del jugador en 1",
+            "cost": 250,
+            "effect": "max_hp",
+            "effect_value": 1,
+            "type": "player",
+            "permanent": true
+        },
+        {
+            "id": "reload_speed",
+            "name": "Recarga Rápida",
+            "description": "Reducir el tiempo de recarga de todas las armas",
+            "cost": 180,
+            "effect": "reload_mult",
+            "effect_value": 0.8,
+            "type": "player",
+            "permanent": true
+        }
+    ]
+}

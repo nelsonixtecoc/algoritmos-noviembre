@@ -1,11 +1,10 @@
 import math
 import random
-from enum import Enum
 
 import pygame
 
 from config import *
-from core.events import EventType, event_bus
+from core.events import EventType, event_bus, GameState
 from ui.hud import HUD
 from systems.upgrade_shop import (
     get_affordable_upgrades,
@@ -18,16 +17,7 @@ from systems.upgrade_shop import (
 from ui.upgrade_ui import draw_upgrade_shop
 from systems.highscore import add_highscore, is_new_highscore, get_highscores
 from systems.config_manager import load_prefs, set as config_set, get as config_get, toggle_fullscreen, DEFAULT_PREFS, save_prefs
-
-
-class GameState(Enum):
-    MENU = "menu"
-    PLAYING = "playing"
-    UPGRADE = "upgrade"
-    PAUSED = "paused"
-    CONFIG = "config"
-    HIGHSCORES = "highscores"
-    GAME_OVER = "game_over"
+from systems.wave_manager import WaveManager
 
 
 class Game:
@@ -37,6 +27,7 @@ class Game:
         self.hud = HUD()
         self.config = load_prefs()  # Cargar configuración al iniciar
         self.upgrade_shop = None  # Se inicializa después cuando sea necesario
+        self.wave_manager = WaveManager(self)  # WaveManager
         self.running = True
         # inicializar el gamestate dentro de Game
         self.state = GameState.MENU
@@ -89,28 +80,6 @@ class Game:
         from entities.barrier import Barrier
         for pos in Barrier.default_positions():
             self.barriers.append(Barrier(*pos))
-
-    def spawn_enemy(self, enemy_type="basic", hp_mult=1.0):
-        """Spawnea un enemigo en un borde aleatorio de la pantalla."""
-        from utils.helpers import random_spawn_point
-
-        x, y = random_spawn_point(WIDTH, HEIGHT, margin=50)
-
-        base_stats = {
-            "basic": {"hp": ENEMY_BASIC_HP, "speed": ENEMY_BASIC_SPEED, "damage": ENEMY_BASIC_DAMAGE, "gold": ENEMY_BASIC_GOLD, "color": (200, 50, 50), "radius": 16, "knockback_resist": 0.0},
-            "tank": {"hp": ENEMY_TANK_HP, "speed": ENEMY_TANK_SPEED, "damage": ENEMY_TANK_DAMAGE, "gold": ENEMY_TANK_GOLD, "color": (100, 100, 200), "radius": 20, "knockback_resist": ENEMY_TANK_KNOCKBACK_RESIST},
-            "speedy": {"hp": ENEMY_SPEEDY_HP, "speed": ENEMY_SPEEDY_SPEED, "damage": ENEMY_SPEEDY_DAMAGE, "gold": ENEMY_SPEEDY_GOLD, "color": (50, 200, 50), "radius": 12, "knockback_resist": 0.0, "dodge_chance": ENEMY_SPEEDY_DODGE_CHANCE},
-        }
-
-        stats = base_stats.get(enemy_type, base_stats["basic"]).copy()
-        stats["hp"] = int(stats["hp"] * hp_mult)
-        stats["max_hp"] = stats["hp"]
-        stats["x"] = x
-        stats["y"] = y
-        stats["type"] = enemy_type
-
-        self.enemies.append(stats)
-        event_bus.publish(EventType.ENEMY_SPAWNED, {"enemy": stats, "type": enemy_type})
 
     # run
     def run(self):
@@ -397,6 +366,14 @@ class Game:
             "old_state": old_state,
             "new_state": new_state
         })
+        # Iniciar oleada 1 al entrar a PLAYING desde MENU
+        if old_state == GameState.MENU and new_state == GameState.PLAYING:
+            self.wave_number = 1
+            self.wave_manager.start_wave(1)
+        # Siguiente oleada tras UPGRADE
+        elif old_state == GameState.UPGRADE and new_state == GameState.PLAYING:
+            self.wave_number += 1
+            self.wave_manager.start_wave(self.wave_number)
 
     def get_weapon_stats(self, weapon):
         stats = {
@@ -567,6 +544,13 @@ class Game:
                     self.player["x"] += ndx * 50 * dt
                     self.player["y"] += ndy * 50 * dt
 
+            # Eliminar enemigos muertos (HP <= 0)
+            if enemy["hp"] <= 0:
+                self.enemies.remove(enemy)
+                self.gold += enemy["gold"]
+                self.enemies_killed += 1
+                event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy["gold"]})
+
     def update_barriers(self, dt):
         """Actualizar las barreras y que se eliminen las destruidas"""
         for barrier in self.barriers[:]:
@@ -619,11 +603,8 @@ class Game:
         self.check_projectile_enemy_collisions()
         self.update_barriers(dt)
 
-        # Spawn timer simple (1 enemigo cada 2 segundos) - temporal hasta WaveManager
-        self.spawn_timer += dt
-        if self.spawn_timer >= 2.0:
-            self.spawn_enemy("basic")
-            self.spawn_timer = 0.0
+        # WaveManager maneja oleadas y spawneo
+        self.wave_manager.update(dt)
 
     def handle_events_upgrade(self):
         """Maneja los eventos durante el estado de mejora."""

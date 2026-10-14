@@ -3,6 +3,17 @@ from enum import Enum
 from typing import Any
 
 
+# Estados del juego
+class GameState(Enum):
+    MENU = "menu"
+    PLAYING = "playing"
+    UPGRADE = "upgrade"
+    PAUSED = "paused"
+    CONFIG = "config"
+    HIGHSCORES = "highscores"
+    GAME_OVER = "game_over"
+
+
 #tipos de eventos
 class EventType(Enum):
     #Jugador

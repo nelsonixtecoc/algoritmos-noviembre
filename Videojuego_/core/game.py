@@ -18,6 +18,18 @@ from ui.upgrade_ui import draw_upgrade_shop
 from systems.highscore import add_highscore, is_new_highscore, get_highscores
 from systems.config_manager import load_prefs, set as config_set, get as config_get, toggle_fullscreen, DEFAULT_PREFS, save_prefs
 from systems.wave_manager import WaveManager
+from entities.weapons import create_weapon
+from entities.projectile import Projectile
+from entities.systems.combat import (
+    apply_damage,
+    check_projectile_collisions,
+    check_player_enemy_collision,
+    check_enemy_barrier_collision,
+    register_screen_shake,
+    register_spawn_particles,
+    register_damage_number,
+    register_flash_callback,
+)
 
 
 class Game:
@@ -28,6 +40,24 @@ class Game:
         self.config = load_prefs()  # Cargar configuración al iniciar
         self.upgrade_shop = None  # Se inicializa después cuando sea necesario
         self.wave_manager = WaveManager(self)  # WaveManager
+        
+        # Sistema de armas (Strategy Pattern)
+        self.weapons = {
+            "pistol": create_weapon("pistol"),
+            "shotgun": create_weapon("shotgun"),
+            "rifle": create_weapon("rifle"),
+        }
+        self.current_weapon = self.weapons["pistol"]
+        
+        # Registrar callbacks para efectos visuales
+        register_screen_shake(self._screen_shake)
+        register_spawn_particles(self._spawn_particles)
+        register_damage_number(self._show_damage_number)
+        register_flash_callback(self._flash_entity)
+        
+        # Suscribirse a eventos de oleada completada
+        event_bus.subscribe(EventType.WAVE_COMPLETED, self._on_wave_completed)
+        
         self.running = True
         # inicializar el gamestate dentro de Game
         self.state = GameState.MENU
@@ -48,6 +78,9 @@ class Game:
         # flags
         self._game_over_triggered = False
         self._victory_triggered = False
+        # Screen shake
+        self._screen_shake_intensity = 0.0
+        self._screen_shake_timer = 0.0
         # fonts / tipografia
         self.font = pygame.font.Font(None, 24)
         self.big_font = pygame.font.Font(None, 48)
@@ -73,6 +106,12 @@ class Game:
             "cooldown": 0.0,
             "invuln_timer": 0.0,
             "speed": PLAYER_SPEED,
+            # Upgrade multipliers
+            "damage_mult": 1.0,
+            "cooldown_mult": 1.0,
+            "spread_mult": 1.0,
+            "speed_mult": 1.0,
+            "pierce_bonus": 0,
         }
 
     def spawn_barriers(self):
@@ -232,18 +271,35 @@ class Game:
 
     def draw_playing(self):
         self.screen.fill(BLACK)
-        # Proyectiles (círculos de colores)
+        
+        # Aplicar screen shake
+        shake_x = shake_y = 0
+        if self._screen_shake_timer > 0:
+            import random
+            shake_x = random.uniform(-self._screen_shake_intensity, self._screen_shake_intensity)
+            shake_y = random.uniform(-self._screen_shake_intensity, self._screen_shake_intensity)
+        
+        # Proyectiles (usando nuevo sistema Projectile)
         for proj in self.projectiles:
-            pygame.draw.circle(self.screen, proj["color"], (int(proj["x"]), int(proj["y"])), proj["radius"])
+            if isinstance(proj, Projectile):
+                proj.draw(self.screen, (0, 0))  # camera offset = 0 por ahora
+            else:
+                # Compatibilidad con proyectiles viejos (dicts)
+                pygame.draw.circle(self.screen, proj["color"], 
+                                 (int(proj["x"]), int(proj["y"])), proj["radius"])
+        
         # Enemigos
         for enemy in self.enemies:
-            pygame.draw.circle(self.screen, enemy["color"], (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
+            pygame.draw.circle(self.screen, enemy["color"], 
+                             (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
             # Barra de vida simple
             if enemy["hp"] < enemy["max_hp"]:
                 bar_w = 30
                 ratio = enemy["hp"] / enemy["max_hp"]
-                pygame.draw.rect(self.screen, (64, 64, 64), (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
-                pygame.draw.rect(self.screen, (0, 255, 0), (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, int(bar_w * ratio), 4))
+                pygame.draw.rect(self.screen, (64, 64, 64), 
+                               (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
+                pygame.draw.rect(self.screen, (0, 255, 0), 
+                               (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, int(bar_w * ratio), 4))
         # Barreras
         for barrier in self.barriers:
             barrier.draw(self.screen)
@@ -368,12 +424,47 @@ class Game:
         })
         # Iniciar oleada 1 al entrar a PLAYING desde MENU
         if old_state == GameState.MENU and new_state == GameState.PLAYING:
+            self.reset_game()
             self.wave_number = 1
             self.wave_manager.start_wave(1)
         # Siguiente oleada tras UPGRADE
         elif old_state == GameState.UPGRADE and new_state == GameState.PLAYING:
             self.wave_number += 1
             self.wave_manager.start_wave(self.wave_number)
+
+    def reset_game(self):
+        """Reinicia completamente el juego para una nueva partida."""
+        # Reset player
+        self.spawn_player()
+        # Reset game state
+        self.enemies.clear()
+        self.projectiles.clear()
+        self.barriers.clear()
+        self.particles.clear()
+        self.powerups.clear()
+        self.gold = STARTING_GOLD
+        self.wave_number = 1
+        self.enemies_killed = 0
+        self.wave_timer = 0.0
+        self.spawn_timer = 0.0
+        self._game_over_triggered = False
+        self._victory_triggered = False
+        self._screen_shake_intensity = 0.0
+        self._screen_shake_timer = 0.0
+        # Reset barriers
+        self.spawn_barriers()
+        # Reset weapon to pistol
+        self.current_weapon = self.weapons["pistol"]
+        self.player["weapon"] = "pistol"
+        # Reset upgrade multipliers
+        self.player["damage_mult"] = 1.0
+        self.player["cooldown_mult"] = 1.0
+        self.player["spread_mult"] = 1.0
+        self.player["speed_mult"] = 1.0
+        self.player["pierce_bonus"] = 0
+        # Reset purchased upgrades
+        from systems.upgrade_shop import _purchased_upgrades
+        _purchased_upgrades.clear()
 
     def get_weapon_stats(self, weapon):
         stats = {
@@ -411,30 +502,24 @@ class Game:
         return stats.get(weapon, stats["pistol"])
 
     def fire_weapon(self, angle):
-        stats = self.get_weapon_stats(self.player["weapon"])
-
-        for _i in range(stats["pellets"]):
-            spread_angle = angle + random.uniform(-stats["spread"], stats["spread"])
-            vx = math.cos(spread_angle) * stats["speed"]
-            vy = math.sin(spread_angle) * stats["speed"]
-
-            spawn_x = self.player["x"] + math.cos(spread_angle) * 20
-            spawn_y = self.player["y"] + math.sin(spread_angle) * 20
-
-            projectile = {
-                "x": spawn_x,
-                "y": spawn_y,
-                "vx": vx,
-                "vy": vy,
-                "damage": stats["damage"],
-                "pierce": stats["pierce"],
-                "explosion_radius": stats["explosion_radius"],
-                "radius": 4,
-                "color": stats["color"],
-                "owner": "player"
-            }
-            self.projectiles.append(projectile)
-        self.player["cooldown"] = stats["cooldown"]
+        """Dispara el arma actual usando el sistema Strategy Pattern."""
+        weapon = self.current_weapon
+        if weapon.can_fire(pygame.time.get_ticks() / 1000.0):
+            projectiles = weapon.fire(
+                x=self.player["x"],
+                y=self.player["y"],
+                angle=angle,
+                damage_mult=self.player.get("damage_mult", 1.0),
+                cooldown_mult=self.player.get("cooldown_mult", 1.0),
+                spread_mult=self.player.get("spread_mult", 1.0),
+                speed_mult=self.player.get("speed_mult", 1.0),
+                pierce_bonus=self.player.get("pierce_bonus", 0),
+            )
+            self.projectiles.extend(projectiles)
+            weapon.reset_cooldown(pygame.time.get_ticks() / 1000.0)
+            weapon.trigger_muzzle_flash()
+            # Screen shake por disparo
+            self._screen_shake(weapon.screen_shake_intensity, 0.05)
 
     def update_player(self, dt):
         p = self.player
@@ -464,25 +549,50 @@ class Game:
         p["aim_angle"] = angle
 
         # disparar si click y cooldown estan listos
-        if self.mouse_pressed and p["cooldown"] <= 0:
+        if self.mouse_pressed:
             self.fire_weapon(angle)
 
+        # Cambio de arma (teclas 1-3)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_1]:
+            self.player["weapon"] = "pistol"
+            self.current_weapon = self.weapons["pistol"]
+        elif keys[pygame.K_2]:
+            self.player["weapon"] = "shotgun"
+            self.current_weapon = self.weapons["shotgun"]
+        elif keys[pygame.K_3]:
+            self.player["weapon"] = "rifle"
+            self.current_weapon = self.weapons["rifle"]
+
+        # Actualizar arma actual
+        current_time = pygame.time.get_ticks() / 1000.0
+        self.current_weapon.update(dt, current_time)
+
         # timers
-        if p["cooldown"] > 0:
-            p["cooldown"] -= dt
         if p["invuln_timer"] > 0:
             p["invuln_timer"] -= dt
+        
+        # Screen shake timer
+        if self._screen_shake_timer > 0:
+            self._screen_shake_timer -= dt
+            self._screen_shake_intensity *= 0.9
 
     def update_projectiles(self, dt):
-        """Mueve los proyectiles y los borra cuando salen de la pantalla"""
+        """Actualiza proyectiles usando el nuevo sistema Projectile."""
         for proj in self.projectiles[:]:
-            proj["x"] += proj["vx"] * dt
-            proj["y"] += proj["vy"] * dt
-            # margen fuera de pantalla
-            margin = 50
-            if (proj["x"] < -margin or proj["x"] > WIDTH + margin or
-                proj["y"] < -margin or proj["y"] > HEIGHT + margin):
-                self.projectiles.remove(proj)
+            if isinstance(proj, Projectile):
+                proj.update(dt)
+                # Verificar si salió de pantalla
+                if proj.is_off_screen() or not proj.alive:
+                    self.projectiles.remove(proj)
+            else:
+                # Compatibilidad con proyectiles viejos (dicts)
+                proj["x"] += proj["vx"] * dt
+                proj["y"] += proj["vy"] * dt
+                margin = 50
+                if (proj["x"] < -margin or proj["x"] > WIDTH + margin or
+                    proj["y"] < -margin or proj["y"] > HEIGHT + margin):
+                    self.projectiles.remove(proj)
 
     def update_enemies(self, dt):
         """Mueve enemigos hacia el player/barreras y chequea colisiones."""
@@ -533,23 +643,26 @@ class Game:
                             event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
                         break  # Una barrera por frame
 
-            # Colisión con player (daño)
-            dist_to_player = math.hypot(px - enemy["x"], py - enemy["y"])
-            if dist_to_player < enemy["radius"] + 16:
-                self.damage_player(enemy["damage"])
-                # Knockback leve al player
-                if dist_to_player > 0:
-                    ndx = (enemy["x"] - px) / dist_to_player
-                    ndy = (enemy["y"] - py) / dist_to_player
-                    self.player["x"] += ndx * 50 * dt
-                    self.player["y"] += ndy * 50 * dt
+            # Colisión con player (daño) - usar sistema de combate
+            player_enemy_collisions = check_player_enemy_collision(self.player, [enemy])
+            if player_enemy_collisions:
+                died = apply_damage(
+                    attacker=enemy,
+                    target=self.player,
+                    amount=enemy["damage"],
+                    knockback=50.0,
+                    knockback_resist=0.0,
+                    damage_type="normal"
+                )
+                if died:
+                    self.player_died()
 
             # Eliminar enemigos muertos (HP <= 0)
-            if enemy["hp"] <= 0:
+            if enemy.get("hp", 0) <= 0:
                 self.enemies.remove(enemy)
-                self.gold += enemy["gold"]
+                self.gold += enemy.get("gold", 0)
                 self.enemies_killed += 1
-                event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy["gold"]})
+                event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy.get("gold", 0)})
 
     def update_barriers(self, dt):
         """Actualizar las barreras y que se eliminen las destruidas"""
@@ -559,38 +672,78 @@ class Game:
                 event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
 
     def check_projectile_enemy_collisions(self):
-        for proj in self.projectiles[:]:
-            for enemy in self.enemies[:]:
-                dx = proj["x"] - enemy["x"]
-                dy = proj["y"] - enemy["y"]
-                dist = math.hypot(dx, dy)
-
-                if dist < proj["radius"] + enemy["radius"]:
-                    # Daño
-                    enemy["hp"] -= proj["damage"]
-                    # Proyectil perforante?
-                    if proj["pierce"] <= 0:
-                        self.projectiles.remove(proj)
-                    else:
-                        proj["pierce"] -= 1
-
-                    # Muerte
-                    if enemy["hp"] <= 0:
-                        self.enemies.remove(enemy)
-                        self.gold += enemy["gold"]
-                        self.enemies_killed += 1
-                        event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy["gold"]})
-                    break  # Un proyectil golpea un enemigo por frame
+        """Usa el nuevo sistema de combate para colisiones proyectil-enemigo."""
+        # Obtener solo proyectiles Projectile (no dicts viejos)
+        proj_list = [p for p in self.projectiles if isinstance(p, Projectile)]
+        if not proj_list or not self.enemies:
+            return
+            
+        collisions = check_projectile_collisions(proj_list, self.enemies)
+        
+        for proj, enemy in collisions:
+            # Aplicar daño
+            died = apply_damage(
+                attacker=self.player,
+                target=enemy,
+                amount=proj.damage,
+                damage_type="normal"
+            )
+            
+            # Manejar perforación
+            if proj.on_hit():
+                if proj in self.projectiles:
+                    self.projectiles.remove(proj)
+            
+            # Si el enemigo murió, dar oro
+            if died:
+                self.gold += enemy.get("gold", 0)
+                self.enemies_killed += 1
+                # El evento ENEMY_DIED ya se publica en apply_damage
 
     def damage_player(self, amount):
+        """Compatibilidad hacia atrás - usa el nuevo sistema apply_damage."""
         if not self.player or self.player["invuln_timer"] > 0:
             return
-        self.player["hp"] -= amount
-        self.player["invuln_timer"] = PLAYER_INVULN_TIME  # 1 segundo
-        event_bus.publish(EventType.PLAYER_DAMAGED, {"damage": amount, "hp": self.player["hp"]})
-
-        if self.player["hp"] <= 0:
+        
+        died = apply_damage(
+            attacker={"type": "enemy"},
+            target=self.player,
+            amount=amount,
+            knockback=50.0,
+            knockback_resist=0.0,
+            damage_type="normal"
+        )
+        
+        if died:
             self.player_died()
+
+    # ===== Callbacks para efectos visuales (registrados en __init__) =====
+    
+    def _screen_shake(self, intensity: float, duration: float):
+        """Callback para screen shake."""
+        self._screen_shake_intensity = intensity
+        self._screen_shake_timer = duration
+
+    def _spawn_particles(self, p_type: str, x: float, y: float, color: tuple, count: int):
+        """Callback para spawn de partículas."""
+        # Por ahora solo log, se puede conectar a particle system cuando esté listo
+        pass  # TODO: Conectar a ParticlePool cuando esté integrado
+
+    def _show_damage_number(self, x: float, y: float, amount: int, color: tuple):
+        """Callback para mostrar número de daño flotante."""
+        # Por ahora solo log, se puede conectar a HUD cuando esté listo
+        pass  # TODO: Conectar a HUD damage numbers
+
+    def _flash_entity(self, entity: dict, duration: float):
+        """Callback para flash visual al recibir daño."""
+        # Por ahora usa invuln_timer como flash visual
+        if entity is self.player:
+            entity["invuln_timer"] = max(entity.get("invuln_timer", 0), duration)
+
+    def _on_wave_completed(self, data: dict):
+        """Handler para evento WAVE_COMPLETED - añade bono de oro."""
+        gold_bonus = data.get("gold_bonus", 0)
+        self.gold += gold_bonus
 
     def player_died(self):
         event_bus.publish(EventType.PLAYER_DIED, {})

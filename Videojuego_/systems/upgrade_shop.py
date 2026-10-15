@@ -19,9 +19,9 @@ from config import (
     STARTING_GOLD,
 )
 
-_UPGRADES_FILE = Path(__file__).resolve().parents[2] / "config" / "upgrades.json"
-
 # Cargar configuración de mejoras
+_UPGRADES_FILE = Path(__file__).resolve().parents[1] / "config" / "upgrades.json"
+
 try:
     with open(_UPGRADES_FILE, "r", encoding="utf-8") as f:
         _UPGRADE_CONFIG = json.load(f)["upgrades"]

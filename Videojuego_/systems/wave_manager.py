@@ -122,5 +122,5 @@ class WaveManager:
         # Entre oleadas: upgrade shop
         self.between_waves = True
         self.wave_timer = self.waves_data[0].get("wave_cooldown", 5.0)
-        event_bus.publish(EventType.WAVE_COMPLETED, {"wave": wave_number, "gold_bonus": 50})
+        event_bus.publish(EventType.WAVE_COMPLETED, {"wave": wave_number, "gold_bonus": 100})
         self.game.change_state(GameState.UPGRADE)

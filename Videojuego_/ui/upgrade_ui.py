@@ -18,6 +18,7 @@ from config import (
     FPS,
     GREEN,
     GRAY,
+    RED,
 )
 
 from systems.upgrade_shop import (
@@ -130,7 +131,7 @@ def draw_upgrade_box(
     surface.blit(name_text, (x + 48, y + 10))
 
     # Costo
-    cost_text = font_small.render(f"Costo: {up['cost']}", True, YELLOW if affordable else DARK_GRAY)
+    cost_text = font_small.render(f"Costo: {upgrade['cost']}", True, YELLOW if affordable else DARK_GRAY)
     surface.blit(cost_text, (x + 48, y + 38))
 
     # Descripción (línea única corta)

@@ -7,7 +7,7 @@ from utils.animation import AnimationPlayer
 
 class Player(Entity): #Hereda todo lo de la plantilla base (Entity)
     WEAPON_NAMES = ["pistol", "shotgun", "rifle"]
-    WAPON_COLORS = [(0, 150, 255), (255,165, 0), (0, 255,255)]
+    WEAPON_COLORS = [(0, 150, 255), (255,165, 0), (0, 255,255)]
     
     def __init__(self, x, y,):
         super().__init__(x,y, PLAYER_HP) # Configura su posicion y 10 de vida inicial
@@ -23,7 +23,7 @@ class Player(Entity): #Hereda todo lo de la plantilla base (Entity)
     def _setup_animations(self):
         # Crea una cajita azul de prueba mientras no tengamos dibujos reales
         base_surface = pygame.Surface((32,32))
-        base_surface.fill(self.WAPON_COLORS[self.weapon_index])
+        base_surface.fill(self.WEAPON_COLORS[self.weapon_index])
         self.animator.add_animation('idle', [base_surface])
         self.animator.add_animation('walk', [base_surface])
 
@@ -110,7 +110,7 @@ class Player(Entity): #Hereda todo lo de la plantilla base (Entity)
         self.invuln_time = PLAYER_INVULN_TIME
         if self.hp == 0:
             self.alive = False
-            return True
+        return True
 
     def update(self, dt, walls=None):
         super().update(dt) #Revisa si sigue con vida
@@ -139,4 +139,6 @@ class Player(Entity): #Hereda todo lo de la plantilla base (Entity)
     def draw(self, surface, camera_offset=(0, 0)):
         if not self.alive:
             return
+        if self.invuln_time > 0 and int(self.invuln_time * 10) % 2 == 0:
+            return   
         super().draw(surface, camera_offset)

@@ -13,8 +13,6 @@ main (protegido, solo PRs)
   ├─ feature/barriers
   ├─ feature/particles
   ├─ feature/upgrade-shop
-  ├─ feature/boss-wave5
-  ├─ feature/boss-wave10
   ├─ feature/ui-hud
   ├─ feature/ui-menus
   ├─ fix/collision-corner-case
@@ -284,7 +282,7 @@ config/         →  nadie (solo JSON data)
 ### Priorización (MoSCoW) - Wave Defense
 | Prioridad | Qué incluye |
 |-----------|-------------|
-| **Must Have** | Player movimiento+3 armas, 3 enemigos, 1 boss (oleada 5), oleadas 1-10, barreras fijas (4), upgrade shop (6 fijos), 3 vidas, game over/victory, highscores, HUD, menús, partículas básicas, build .exe |
+| **Must Have** | Player movimiento+3 armas, 3 enemigos, oleadas 1-10, barreras fijas (4), upgrade shop (6 fijos), 3 vidas, game over/victory, highscores, HUD, menús, partículas básicas, build .exe |
 | **Should Have** | Screen shake, flash daño, dificultad ajustable |
 | **Could Have** | Trail partículas por arma, shaders simples |
 | **Won't Have** | Power-ups, enemigos Explosive/Splitter, boss oleada 10, barreras colocables/reparables, 2ª arena, stats screen, multiplayer, inventory, crafting, skill tree, diálogo NPCs, save mid-run, online leaderboard |
@@ -297,7 +295,7 @@ config/         →  nadie (solo JSON data)
 |-----|-------|----------------------|
 | **Tech Lead / Core** | Nelson | Arquitectura, `core/`, `config.py`, `utils/helpers.py`, merge strategy, build, scope freeze, code review owner |
 | **Player & Weapons** | Fabiola | `entities/player.py`, `entities/weapons/`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base), feel controles |
-| **Enemies & Waves** | Lilian | `entities/enemies/`, `entities/boss.py`, `systems/wave_manager.py`, `config/waves.json`, IA, spawning, balanceo oleadas |
+| **Enemies & Waves** | Lilian | `entities/enemies/`, `systems/wave_manager.py`, `config/waves.json`, IA, spawning, balanceo oleadas |
 | **Barriers & Particles** | Zebedeo | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py`, object pooling, screen shake, visual feedback |
 | **UI, Upgrades & Menus** | Aron | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json`, `core/save_load.py` (highscores), sonidos integración |
 | **Assets & QA Lead** | Leslie | `assets/`, `utils/animation.py`, testing manual, bug tracking, README, video demo, placeholders → finales |

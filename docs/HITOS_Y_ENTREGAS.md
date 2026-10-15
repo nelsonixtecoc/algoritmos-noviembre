@@ -65,7 +65,7 @@
 ---
 
 ### H2: Systems Completion (Semana 3 - 20-26 Oct)
-**Objetivo:** Sistemas de profundidad: barreras fijas, partículas básicas, upgrade shop simplificado, boss wave 5.
+**Objetivo:** Sistemas de profundidad: barreras fijas, partículas básicas, upgrade shop simplificado.
 
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
@@ -82,7 +82,7 @@
 - Barreras fijas (4), enemigos las destruyen
 - Partículas en cada impacto/muerte + screen shake
 - Upgrade Shop aparece oleada 2, 3, 4... 6 opciones fijas, compra funciona
-- Boss oleada 5 se vence (3 fases)
+
 
 ---
 
@@ -100,7 +100,7 @@
 
 **Demo viernes 2 nov:**
 - Partida completa 1-10 oleadas + victoria
-- 3 enemigos + 1 boss funcionales
+- 3 enemigos funcionales
 - Menús navegables teclado + mouse
 - Highscores guardan y muestran
 - Assets finales, sonidos, música

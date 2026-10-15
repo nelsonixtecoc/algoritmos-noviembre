@@ -32,8 +32,6 @@ class EventType(Enum):
     #ordas / oleadas
     WAVE_STARTED = "wave_started"
     WAVE_COMPLETED = "wave_completed"
-    BOSS_SPAWNED = "boss_spawned"
-    BOSS_PHASE_CHANGE = "boss_phase_change"
     #sistema
     UPGRADE_PURCHASED = "upgrade_purchased"
     GOLD_CHANGED = "gold_changed"

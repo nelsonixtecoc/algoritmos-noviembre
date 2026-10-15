@@ -6,7 +6,7 @@
 |---|------------|-----|----------------------|----------------|
 | 1 | **Nelson** | Líder Técnico / Core | Game loop, State machine, EventBus, Save/Load, Build, Code Review | `main.py`, `config.py`, `core/game.py`, `core/events.py`, `core/save_load.py`, `utils/helpers.py` |
 | 2 | **Fabiola** | Player & Weapons System | Player, Input, Armas (Strategy - 3 armas), Proyectiles, Sistema Combate | `entities/player.py`, `entities/weapons/*.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` |
-| 3 | **Lilian** | Enemies & Wave System | Enemigos (3 tipos + 1 Boss), WaveManager (10 oleadas), Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
+| 3 | **Lilian** | Enemies & Wave System | Enemigos (3 tipos), WaveManager (10 oleadas), Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
 | 4 | **Zebedeo** | Barriers & Particles | Barreras fijas (4 posiciones, HP, draw), Particle Pool básico, Screen Shake, Debug | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py` |
 | 5 | **Aron** | UI, Upgrades & Menus | HUD, Menús, Upgrade Shop (6 fijos), Highscores, Game Over/Victory input | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json` |
 | 6 | **Leslie** | Assets & QA Lead | Sprites, Animaciones, Sonidos, Testing, Bug Tracking, Docs, Video Demo | `assets/`, `utils/animation.py`, README, checklist QA |
@@ -73,15 +73,15 @@
 
 **Semana 2:**
 - [ ] `systems/wave_manager.py` - Lee `config/waves.json`, spawnea oleadas, timer entre oleadas, contador enemigos vivos, evento WAVE_COMPLETE
-- [ ] `config/waves.json` - Oleadas 1-10: tipos, count, hp_mult, spawn_interval, boss en oleada 5
+- [ ] `config/waves.json` - Oleadas 1-10: tipos, count, hp_mult, spawn_interval
 - [ ] Integración WaveManager → Game.playing: spawnea en bordes pantalla (top/bottom/left/right aleatorio)
 
 **Semana 3:**
-- [ ] `entities/enemies/boss.py` - Boss oleada 5: 3 fases, hp 500→300→200, patrones: radial burst, charge, summon basics. Weak point: brilla 3s cada fase.
-
-**Semana 4:**
 - [ ] Tuning dificultad: HP, daño, timings por oleada en `waves.json`
 - [ ] Death animations + drop oro + partículas (EventBus)
+
+**Semana 4:**
+- [ ] Testing visual: claridad feedback, no spam partículas
 
 ---
 
@@ -96,7 +96,7 @@
 - [ ] `utils/debug.py` - Toggle hitboxes (F3), FPS counter, entity counts, wave info
 
 **Semana 3:**
-- [ ] Screen shake en: player hit, boss hit, wave complete
+- [ ] Screen shake en: player hit, wave complete
 - [ ] Polish partículas: fade out, color por tipo enemigo
 
 **Semana 4:**
@@ -118,7 +118,7 @@
 - [ ] `systems/upgrade_shop.py` - Carga `config/upgrades.json` (6 upgrades fijos), muestra todos, aplica efecto al comprar
 - [ ] `config/upgrades.json` - 6 upgrades fijos: daño +20%, cadencia -15%, vida max +1, velocidad +15%, barrera HP +50%, oro extra +25%
 - [ ] `ui/upgrade_ui.py` - Lista simple 6 upgrades: nombre, descripción, costo, tecla (1-6), confirmación Enter
-- [ ] Integración sonidos: `assets/sounds/` (sfx: shoot, hit, kill, coin, upgrade, wave_start, game_over + música loop 2 tracks)
+- [ ] Integración sonidos: `assets/sounds/` (sfx: shoot, hit, kill, coin, upgrade, wave_start, game_over)
 
 **Semana 4:**
 - [ ] Polish: transiciones fade in/out entre estados
@@ -135,20 +135,19 @@
   assets/
   ├── sprites/
   │   ├── player/        # idle.png, walk_1-4.png, shoot.png, hurt.png (3 armas)
-  │   ├── enemies/       # basic/, tank/, speedy/, boss/
+  │   ├── enemies/       # basic/, tank/, speedy/
   │   ├── weapons/       # pistol.png, shotgun.png, rifle.png, projectiles/
   │   ├── barrier/       # barrier_1-4.png, barrier_destroyed.png
   │   ├── ui/            # heart_full.png, heart_empty.png, coin.png
   │   └── particles/     # spark.png, smoke.png
   ├── sounds/
-  │   ├── sfx/           # .wav/.ogg (shoot, hit, kill, coin, upgrade, wave, hurt)
-  │   └── music/         # main_loop.ogg, boss_loop.ogg
+  │   └── sfx/           # .wav/.ogg (shoot, hit, kill, coin, upgrade, wave, hurt)
   └── fonts/             # .ttf pixel art (ej. PressStart2P, Pixeloid)
   ```
 - [ ] Placeholders día 1: rectángulos colores para TODOS sprites (permite trabajar al resto)
 
 **Semana 2-3:**
-- [ ] Sprites finales progresivos (prioridad: player → enemigos básicos → armas/proyectiles → barreras → boss → UI → partículas)
+- [ ] Sprites finales progresivos (prioridad: player → enemigos básicos → armas/proyectiles → barreras → UI → partículas)
 - [ ] `utils/animation.py` - Clase Animation: frames (list[Surface]), duration, loop, flip_h, flip_v, get_frame(dt)
 - [ ] Sonidos generados con sfxr/bfxr + música libre (opengameart/itch.io)
 

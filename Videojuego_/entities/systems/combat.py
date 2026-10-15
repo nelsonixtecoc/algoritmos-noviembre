@@ -294,7 +294,7 @@ def get_weapon_recommendation(enemies_count: int, enemy_types: List[str]) -> str
     """Recomienda arma según situación."""
     if enemies_count > 5 and "basic" in enemy_types:
         return "shotgun"
-    elif any(t in enemy_types for t in ["tank", "boss"]):
+    elif "tank" in enemy_types:
         return "rifle"
     return "pistol"
 

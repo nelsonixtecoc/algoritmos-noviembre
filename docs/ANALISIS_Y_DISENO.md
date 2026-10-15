@@ -20,7 +20,7 @@
 | **Vidas** | 3 corazones (3 golpes = Game Over), invulnerabilidad 1s tras daño | P0 |
 | **Oleadas (Waves)** | Spawner configurado en JSON: tipos, cuenta, HP mult, intervalo spawn | P0 |
 | **Enemigos Básicos** | 3 tipos: Basic (estándar), Tank (HP alto, lento), Speedy (rápido, frágil) | P0 |
-| **Jefes (Boss)** | Oleada 5: máquina de estados, 3 fases, weak point, telegraphing | P0 |
+
 | **Barreras** | 4 fijas (esquinas zona player), HP visible, objetivo prioritario enemigos | P0 |
 | **Tienda Mejoras (Upgrade Shop)** | Entre oleadas: 6 upgrades fijos (daño, cadencia, vida, velocidad, barrera+, oro+) | P0 |
 | **Economía** | Oro por matar → gasto en mejoras | P0 |

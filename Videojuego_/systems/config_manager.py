@@ -14,7 +14,6 @@ _PREFS_FILE = Path(__file__).resolve().parents[2] / "data" / "prefs.json"
 
 # Valores predeterminados seguros
 DEFAULT_PREFS = {
-    "volume_music": 0.5,
     "volume_sfx": 0.8,
     "fullscreen": False,
     "resolution": "640x480",

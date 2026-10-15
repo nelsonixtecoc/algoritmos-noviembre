@@ -66,13 +66,13 @@ class Weapon(ABC):
         """
         pass
     
-    def can_fire(self, current_time: float) -> bool:
+    def can_fire(self, current_time: float, cooldwn_mult: float = 1.0) -> bool:
         """Verifica si el arma puede disparar (cooldown listo y tiene munición)."""
         if self._reloading:
             return False
         if self.max_ammo > 0 and self.ammo <= 0:
             return False
-        return current_time - self.last_shot_time >= self.get_effective_cooldown()
+        return current_time - self.last_shot_time >= self.get_effective_cooldown(cooldwn_mult)
     
     def get_effective_cooldown(self, cooldown_mult: float = 1.0) -> float:
         """Cooldown efectivo con multiplicador."""

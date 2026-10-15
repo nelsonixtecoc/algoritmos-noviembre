@@ -97,8 +97,8 @@ def apply_damage(attacker: dict, target: dict, amount: int,
     
     # Knockback
     if knockback > 0 and knockback_resist < 1.0:
-        effective_knockback = knockback * (1.0 - knockback_resist)
-        # La dirección se calcula fuera y se aplica via resolve_knockback
+        if "x" in attacker and "y" in attacker:
+            resolve_knockback(target, attacker["x"], attacker["y"], knockback,knockback_resist)
     
     # Flash visual
     _trigger_flash(target, 0.1)
@@ -117,16 +117,17 @@ def apply_damage(attacker: dict, target: dict, amount: int,
     # Screen shake leve
     _trigger_screen_shake(2.0, 0.1)
     
-    # Evento de daño
-    event_type = EventType.PLAYER_DAMAGED if "weapon" in target else EventType.ENEMY_DIED
-    event_bus.publish(event_type, {
-        "attacker": attacker,
-        "target": target,
-        "damage": amount,
-        "damage_type": damage_type,
-        "old_hp": old_hp,
-        "new_hp": target["hp"]
-    })
+    # Evento de daño (solo el jugador tiene un evento propio de "dañado";
+    # ENEMY_DIED se publica más abajo, únicamente cuando el enemigo muere de verdad)
+    if "weapon" in target:
+        event_bus.publish(EventType.PLAYER_DAMAGED, {
+            "attacker": attacker,
+            "target": target,
+            "damage": amount,
+            "damage_type": damage_type,
+            "old_hp": old_hp,
+            "new_hp": target["hp"]
+        })
     
     # Verificar muerte
     if target["hp"] <= 0:

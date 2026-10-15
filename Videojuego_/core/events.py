@@ -12,6 +12,7 @@ class GameState(Enum):
     CONFIG = "config"
     HIGHSCORES = "highscores"
     GAME_OVER = "game_over"
+    NAME_ENTRY = "name_entry"
 
 
 #tipos de eventos

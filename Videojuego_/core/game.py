@@ -81,6 +81,8 @@ class Game:
         # Screen shake
         self._screen_shake_intensity = 0.0
         self._screen_shake_timer = 0.0
+        # Name input
+        self.name_input = ""
         # fonts / tipografia
         self.font = pygame.font.Font(None, 24)
         self.big_font = pygame.font.Font(None, 48)
@@ -140,6 +142,8 @@ class Game:
                 self.handle_events_upgrade()
             elif self.state == GameState.GAME_OVER:
                 self.handle_events_game_over()
+            elif self.state == GameState.NAME_ENTRY:
+                self.handle_events_name_entry()
 
             # Update según estado
             if self.state == GameState.PLAYING:
@@ -160,6 +164,8 @@ class Game:
                 self.draw_upgrade()
             elif self.state == GameState.GAME_OVER:
                 self.draw_game_over()
+            elif self.state == GameState.NAME_ENTRY:
+                self.draw_name_entry()
 
     def handle_global_events(self, events):
         for event in events:
@@ -237,14 +243,39 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     if self.player:
-                        add_highscore("Jugador", self.gold)
-                    self.change_state(GameState.MENU)
+                        # Verificar si es nuevo highscore
+                        if is_new_highscore(self.gold):
+                            self.change_state(GameState.NAME_ENTRY)
+                        else:
+                            add_highscore("Jugador", self.gold)
+                            self.change_state(GameState.MENU)
+                    else:
+                        self.change_state(GameState.MENU)
                     self._game_over_triggered = False
                     self._victory_triggered = False
                 elif event.key == pygame.K_ESCAPE:
                     self.change_state(GameState.MENU)
                     self._game_over_triggered = False
                     self._victory_triggered = False
+
+    def handle_events_name_entry(self):
+        events = pygame.event.get()
+        self.handle_global_events(events)
+        if not hasattr(self, 'name_input'):
+            self.name_input = ""
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    if len(self.name_input) == 3:
+                        add_highscore(self.name_input, self.gold)
+                        self.name_input = ""
+                        self.change_state(GameState.MENU)
+                elif event.key == pygame.K_BACKSPACE:
+                    self.name_input = self.name_input[:-1]
+                else:
+                    # Solo letras A-Z
+                    if len(self.name_input) < 3 and event.unicode.isalpha():
+                        self.name_input += event.unicode.upper()
 
     def draw_menu(self):
         self.screen.fill(BLACK)
@@ -286,18 +317,18 @@ class Game:
             else:
                 # Compatibilidad con proyectiles viejos (dicts)
                 pygame.draw.circle(self.screen, proj["color"], 
-                                 (int(proj["x"]), int(proj["y"])), proj["radius"])
+                                (int(proj["x"]), int(proj["y"])), proj["radius"])
         
         # Enemigos
         for enemy in self.enemies:
             pygame.draw.circle(self.screen, enemy["color"], 
-                             (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
+                            (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
             # Barra de vida simple
             if enemy["hp"] < enemy["max_hp"]:
                 bar_w = 30
                 ratio = enemy["hp"] / enemy["max_hp"]
                 pygame.draw.rect(self.screen, (64, 64, 64), 
-                               (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
+                            (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
                 pygame.draw.rect(self.screen, (0, 255, 0), 
                                (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, int(bar_w * ratio), 4))
         # Barreras
@@ -451,6 +482,8 @@ class Game:
         self._victory_triggered = False
         self._screen_shake_intensity = 0.0
         self._screen_shake_timer = 0.0
+        # Reset name input
+        self.name_input = ""
         # Reset barriers
         self.spawn_barriers()
         # Reset weapon to pistol
@@ -758,6 +791,61 @@ class Game:
 
         # WaveManager maneja oleadas y spawneo
         self.wave_manager.update(dt)
+
+    def draw_name_entry(self):
+        """Dibuja la pantalla para ingresar el nombre del highscore."""
+        self.screen.fill(BLACK)
+
+        # Título
+        title = self.big_font.render("¡NUEVO RÉCORD!", True, YELLOW)
+        title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 4))
+        self.screen.blit(title, title_rect)
+
+        # Mensaje
+        msg = self.font.render(f"Llegaste a la oleada {self.wave_number}", True, WHITE)
+        msg_rect = msg.get_rect(center=(WIDTH // 2, HEIGHT // 3 + 40))
+        self.screen.blit(msg, msg_rect)
+
+        # Input de nombre (3 letras)
+        # Cursor parpadeante
+        cursor_visible = (pygame.time.get_ticks() // 500) % 2 == 0
+
+        # Dibujar 3 cuadros para las letras
+        box_size = 50
+        spacing = 10
+        total_width = 3 * box_size + 2 * spacing
+        start_x = WIDTH // 2 - total_width // 2
+        y = HEIGHT // 2
+
+        for i in range(3):
+            x = start_x + i * (box_size + spacing)
+            # Fondo del cuadro
+            box_rect = pygame.Rect(x, y, box_size, box_size)
+            pygame.draw.rect(self.screen, DARK_GRAY, box_rect)
+            pygame.draw.rect(self.screen, WHITE, box_rect, 3)
+
+            # Letra
+            if i < len(self.name_input):
+                letter = self.name_input[i]
+                letter_surf = self.big_font.render(letter, True, YELLOW)
+                letter_rect = letter_surf.get_rect(center=box_rect.center)
+                self.screen.blit(letter_surf, letter_rect)
+            elif i == len(self.name_input) and cursor_visible:
+                # Cursor parpadeante
+                cursor_surf = self.big_font.render("_", True, YELLOW)
+                cursor_rect = cursor_surf.get_rect(center=box_rect.center)
+                self.screen.blit(cursor_surf, cursor_rect)
+
+        # Instrucciones
+        instr1 = self.font.render("A-Z: escribir  |  BACKSPACE: borrar", True, GRAY)
+        instr1_rect = instr1.get_rect(center=(WIDTH // 2, HEIGHT - 80))
+        self.screen.blit(instr1, instr1_rect)
+
+        instr2 = self.font.render("ENTER: confirmar (3 letras)", True, GRAY)
+        instr2_rect = instr2.get_rect(center=(WIDTH // 2, HEIGHT - 50))
+        self.screen.blit(instr2, instr2_rect)
+
+        pygame.display.flip()
 
     def handle_events_upgrade(self):
         """Maneja los eventos durante el estado de mejora."""

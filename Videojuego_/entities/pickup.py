@@ -74,9 +74,9 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: dict) -> None:
-        """Suma vida, pero nunca pasa de player['max_hp']."""
-        player["hp"] = min(player["max_hp"], player["hp"] + HEALTH_PICKUP_HEAL)
+    def apply(self, player: "Player") -> None:
+        """Suma vida, pero nunca pasa de player.max_hp."""
+        player.hp = min(player.max_hp, player.hp + HEALTH_PICKUP_HEAL)
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("health", self._SPRITE)
@@ -94,9 +94,9 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: dict) -> None:
+    def apply(self, player: "Player") -> None:
         """Aumenta la velocidad base del jugador."""
-        player["speed"] += SPEED_PICKUP_BONUS
+        player.speed += SPEED_PICKUP_BONUS
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("speed", self._SPRITE)

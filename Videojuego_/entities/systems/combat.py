@@ -11,9 +11,8 @@ from core.events import event_bus, EventType
 # CALLBACKS PARA EFECTOS VISUALES (se registran desde game.py)
 
 _screen_shake_callback: Optional[Callable[[float, float], None]] = None
-_spawn_particles_callback: Optional[Callable[[str, float, float, Tuple[int, int, int], int], None]] = None
 _damage_number_callback: Optional[Callable[[float, float, int, Tuple[int, int, int]], None]] = None
-_flash_callback: Optional[Callable[[dict, float], None]] = None
+_flash_callback: Optional[Callable[[object, float], None]] = None
 
 
 def register_screen_shake(callback: Callable[[float, float], None]):
@@ -22,19 +21,13 @@ def register_screen_shake(callback: Callable[[float, float], None]):
     _screen_shake_callback = callback
 
 
-def register_spawn_particles(callback: Callable[[str, float, float, Tuple[int, int, int], int], None]):
-    """Registra callback para partículas: callback(type, x, y, color, count)."""
-    global _spawn_particles_callback
-    _spawn_particles_callback = callback
-
-
 def register_damage_number(callback: Callable[[float, float, int, Tuple[int, int, int]], None]):
     """Registra callback para números de daño: callback(x, y, amount, color)."""
     global _damage_number_callback
     _damage_number_callback = callback
 
 
-def register_flash_callback(callback: Callable[[dict, float], None]):
+def register_flash_callback(callback: Callable[[object, float], None]):
     """Registra callback para flash visual: callback(entity, duration)."""
     global _flash_callback
     _flash_callback = callback
@@ -45,19 +38,32 @@ def _trigger_screen_shake(intensity: float, duration: float = 0.2):
         _screen_shake_callback(intensity, duration)
 
 
-def _spawn_particles(p_type: str, x: float, y: float, color: Tuple[int, int, int], count: int = 10):
-    if _spawn_particles_callback:
-        _spawn_particles_callback(p_type, x, y, color, count)
-
-
 def _show_damage_number(x: float, y: float, amount: int, color: Tuple[int, int, int] = WHITE):
     if _damage_number_callback:
         _damage_number_callback(x, y, amount, color)
 
 
-def _trigger_flash(entity: dict, duration: float = 0.1):
+def _trigger_flash(entity: object, duration: float = 0.1):
     if _flash_callback:
         _flash_callback(entity, duration)
+
+
+# Helpers para leer/escribir atributos en objetos (Enemy) o diccionarios (player)
+def _get_attr(obj: object, key: str, default=None):
+    """Lee un atributo si es objeto, o una clave si es diccionario."""
+    if hasattr(obj, key):
+        return getattr(obj, key)
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return default
+
+
+def _set_attr(obj: object, key: str, value):
+    """Escribe un atributo si es objeto, o una clave si es diccionario."""
+    if hasattr(obj, key):
+        setattr(obj, key, value)
+    else:
+        obj[key] = value
 
 # DAÑO Y COMBATE
 
@@ -79,26 +85,26 @@ def apply_damage(attacker: dict, target: dict, amount: int,
         True si el objetivo murió, False en caso contrario
     """
     # Verificar invulnerabilidad
-    if target.get("invuln_timer", 0) > 0:
+    if _get_attr(target, "invuln_timer", 0) > 0:
         return False
     
     # Verificar si está vivo
-    if not target.get("alive", True):
+    if not _get_attr(target, "alive", True):
         return False
     
     # Aplicar daño
-    old_hp = target.get("hp", 0)
-    target["hp"] = max(0, old_hp - amount)
+    old_hp = _get_attr(target, "hp", 0)
+    _set_attr(target, "hp", max(0, old_hp - amount))
     
     # Invulnerabilidad post-daño SOLO para player (tiene "weapon" key)
     # Enemigos NO reciben invulnerabilidad para permitir multi-hit
-    if "weapon" in target:
-        target["invuln_timer"] = PLAYER_INVULN_TIME
+    if _get_attr(target, "weapon", None) is not None:
+        _set_attr(target, "invuln_timer", PLAYER_INVULN_TIME)
     
     # Knockback
     if knockback > 0 and knockback_resist < 1.0:
-        if "x" in attacker and "y" in attacker:
-            resolve_knockback(target, attacker["x"], attacker["y"], knockback,knockback_resist)
+        if _get_attr(attacker, "x", None) is not None and _get_attr(attacker, "y", None) is not None:
+            resolve_knockback(target, _get_attr(attacker, "x"), _get_attr(attacker, "y"), knockback, knockback_resist)
     
     # Flash visual
     _trigger_flash(target, 0.1)
@@ -109,41 +115,35 @@ def apply_damage(attacker: dict, target: dict, amount: int,
         dmg_color = ORANGE
     elif damage_type == "fire":
         dmg_color = (255, 100, 0)
-    _show_damage_number(target["x"], target["y"] - 20, amount, dmg_color)
-    
-    # Partículas de impacto
-    _spawn_particles("impact", target["x"], target["y"], WHITE, 8)
+    _show_damage_number(_get_attr(target, "x"), _get_attr(target, "y") - 20, amount, dmg_color)
     
     # Screen shake leve
     _trigger_screen_shake(2.0, 0.1)
     
     # Evento de daño (solo el jugador tiene un evento propio de "dañado";
     # ENEMY_DIED se publica más abajo, únicamente cuando el enemigo muere de verdad)
-    if "weapon" in target:
+    if _get_attr(target, "weapon", None) is not None:
         event_bus.publish(EventType.PLAYER_DAMAGED, {
             "attacker": attacker,
             "target": target,
             "damage": amount,
             "damage_type": damage_type,
             "old_hp": old_hp,
-            "new_hp": target["hp"]
+            "new_hp": _get_attr(target, "hp")
         })
     
     # Verificar muerte
-    if target["hp"] <= 0:
-        target["hp"] = 0
-        target["alive"] = False
-        
-        # Partículas de muerte
-        _spawn_particles("death", target["x"], target["y"], target.get("color", RED), 20)
+    if _get_attr(target, "hp") <= 0:
+        _set_attr(target, "hp", 0)
+        _set_attr(target, "alive", False)
         
         # Screen shake mayor
         _trigger_screen_shake(5.0, 0.3)
         
-        event_bus.publish(EventType.ENEMY_DIED if "weapon" not in target else EventType.PLAYER_DIED, {
+        event_bus.publish(EventType.ENEMY_DIED if _get_attr(target, "weapon", None) is None else EventType.PLAYER_DIED, {
             "entity": target,
             "killer": attacker,
-            "gold": target.get("gold", 0)
+            "gold": _get_attr(target, "gold", 0)
         })
         return True
     
@@ -164,14 +164,14 @@ def check_projectile_collisions(projectiles: List[Projectile], enemies: List[dic
             continue
             
         for enemy in enemies:
-            if not enemy.get("alive", True):
+            if not enemy.alive:
                 continue
             
-            dx = proj.x - enemy["x"]
-            dy = proj.y - enemy["y"]
+            dx = proj.x - enemy.x
+            dy = proj.y - enemy.y
             distance = math.hypot(dx, dy)
             
-            if distance < proj.radius + enemy.get("radius", 16):
+            if distance < proj.radius + enemy.radius:
                 collisions.append((proj, enemy))
                 break  # Un proyectil golpea un enemigo por frame
     
@@ -189,14 +189,14 @@ def check_player_enemy_collision(player: dict, enemies: List[dict]) -> List[dict
     player_radius = player.get("radius", 16)
     
     for enemy in enemies:
-        if not enemy.get("alive", True):
+        if not enemy.alive:
             continue
             
-        dx = player["x"] - enemy["x"]
-        dy = player["y"] - enemy["y"]
+        dx = player["x"] - enemy.x
+        dy = player["y"] - enemy.y
         distance = math.hypot(dx, dy)
         
-        if distance < player_radius + enemy.get("radius", 16):
+        if distance < player_radius + enemy.radius:
             collisions.append(enemy)
     
     return collisions

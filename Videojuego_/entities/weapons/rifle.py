@@ -23,7 +23,6 @@ class Rifle(Weapon):
     muzzle_flash_duration: float = 0.03
     recoil_amount: float = 5.0
     screen_shake_intensity: float = 1.5
-    shoot_sound: str = "shoot_rifle"
     
     def fire(self, x: float, y: float, angle: float, damage_mult: float = 1.0,
              cooldown_mult: float = 1.0, spread_mult: float = 1.0,

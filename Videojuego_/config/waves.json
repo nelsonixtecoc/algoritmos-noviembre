@@ -11,6 +11,5 @@
     {"wave": 9, "enemies": [{"type": "basic", "count": 25, "hp_mult": 2.2, "spawn_interval": 0.4}, {"type": "tank", "count": 4, "hp_mult": 1.7, "spawn_interval": 1.5}, {"type": "speedy", "count": 10, "hp_mult": 1.7, "spawn_interval": 0.8}]},
     {"wave": 10, "enemies": [{"type": "basic", "count": 30, "hp_mult": 2.5, "spawn_interval": 0.3}, {"type": "tank", "count": 5, "hp_mult": 2.0, "spawn_interval": 1.0}, {"type": "speedy", "count": 15, "hp_mult": 2.0, "spawn_interval": 0.5}], "is_final": true}
   ],
-  "wave_cooldown": 5.0,
-  "upgrade_shop_duration": 10.0
+  "wave_cooldown": 5.0
 }

@@ -1,7 +1,7 @@
 """Sistema de highscores (mejores puntuaciones).
 
 Almacena y carga las mejores puntuaciones en un archivo local.
-Soporta hasta 10 récords y maneja archivos inexistentes o dañados.
+Soporta hasta 5 récords y maneja archivos inexistentes o dañados.
 
 Asegura que el directorio de datos exista antes de leer/escribir archivos.
 """
@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 _HIGHSCORES_FILE = Path(__file__).resolve().parents[2] / "data" / "highscores.json"
-_MAX_SCORES = 10
+_MAX_SCORES = 5
 
 
 def _ensure_data_dir() -> None:
@@ -58,7 +58,7 @@ def get_highscores() -> list[dict]:
     scores = _load_highscores()
     # Ordenar por puntuación de mayor a menor
     scores.sort(key=lambda x: x["score"], reverse=True)
-    # Limitar a máximo 10
+    # Limitar a máximo 5
     return scores[:_MAX_SCORES]
 
 
@@ -70,7 +70,7 @@ def add_highscore(name: str, score: int) -> list[dict]:
     scores = _load_highscores()
     scores.append({"name": name[:20], "score": int(score)})  # Limitar nombre a 20 chars
     scores = sorted(scores, key=lambda x: x["score"], reverse=True)
-    scores = scores[:_MAX_SCORES]  # Mantener solo los 10 mejores
+    scores = scores[:_MAX_SCORES]  # Mantener solo los 5 mejores
 
     if _save_highscores(scores):
         return scores
@@ -78,7 +78,7 @@ def add_highscore(name: str, score: int) -> list[dict]:
 
 
 def is_new_highscore(score: int) -> bool:
-    """Verificar si una puntuación entra en el top 10."""
+    """Verificar si una puntuación entra en el top 5."""
     scores = get_highscores()
     if len(scores) < _MAX_SCORES:
         return True

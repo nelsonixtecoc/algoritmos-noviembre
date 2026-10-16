@@ -36,7 +36,7 @@
 - Teclas 1-3 cambian "arma" (cambia color rectángulo)
 - Espacio → "dispara" (print consola)
 - Escape → Pause → Escape → Playing
-- F3 → toggle hitboxes (debug)
+
 
 ---
 
@@ -65,23 +65,20 @@
 ---
 
 ### H2: Systems Completion (Semana 3 - 20-26 Oct)
-**Objetivo:** Sistemas de profundidad: barreras fijas, partículas básicas, upgrade shop simplificado.
+**Objetivo:** Sistemas de profundidad: barreras fijas, screen shake básico.
 
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
 | `entities/barrier.py` 4 fijas (HP, draw) | Zebedeo | 4 posiciones fijas, HP 200, draw_health_bar(), take_damage() |
 | Enemigos atacan barreras prioritarias | Lilian + Zebedeo | Si barrera en rango → ataca barrera → si no, player/base |
-| `systems/particles.py` pool + screen shake | Zebedeo | 100 partículas pre-creadas, tipos: impact, death. Shake en hit/boss/wave_complete |
-| `config/upgrades.json` 6 upgrades fijos | Aron | Daño +20%, cadencia -15%, vida max +1, velocidad +15%, barrera HP +50%, oro extra +25% |
-| `systems/upgrade_shop.py` + `ui/upgrade_ui.py` | Aron | Entre oleadas: lista 6 fijos, teclas 1-6 compran, efecto inmediato |
+
 | Boss oleada 5 (3 fases) | Lilian | HP 500, patrones: radial burst, charge, summon basics. Weak point brilla 3s/fase |
-| `utils/debug.py` | Zebedeo | F3 hitboxes, FPS, entity counts, wave info |
 | Assets week 1-2 integrados | Leslie | Player animado, 3 enemigos básicos, proyectiles, barrera, UI básica |
 
 **Demo viernes 26 oct:**
 - Barreras fijas (4), enemigos las destruyen
-- Partículas en cada impacto/muerte + screen shake
-- Upgrade Shop aparece oleada 2, 3, 4... 6 opciones fijas, compra funciona
+- Screen shake en hits y muertes
+- Fin de oleada: mensaje "Fin de la Oleada" 3 segundos entre oleadas
 
 
 ---
@@ -92,18 +89,18 @@
 | Tarea | Responsable | Criterio Done |
 |-------|-------------|---------------|
 | `waves.json` oleadas 1-10 balanceadas | Lilian | Dificultad curva suave, variety tipos (Basic, Tank, Speedy), oro escalado |
-| `core/save_load.py` highscores completos | Nelson | Top 10 persistente JSON, carga en MainMenu y GameOver |
+| `core/save_load.py` highscores completos | Nelson | Top 5 persistente JSON, carga en MainMenu y GameOver |
 | `ui/menus.py` + `ui/game_over.py` | Aron | Main, Pause, Game Over/Victoria compartida (input nombre), Highscores screen |
-| Sonidos + música integrados | Leslie + Aron | SFX: shoot, hit, kill, coin, upgrade, wave, hurt. Música: main + boss loop |
-| Assets finales TODOS integrados | Leslie | 0 placeholders. Sprites animados, UI consistente, partículas con sprites |
-| Balanceo final playtesting | Todos | 3-4 partidas completas ajustando `config.py` + `waves.json` + `upgrades.json` |
+| Música de fondo integrada (opcional) | Leslie + Aron | Música: main + boss loop |
+| Assets finales TODOS integrados | Leslie | 0 placeholders. Sprites animados, UI consistente |
+| Balanceo final playtesting | Todos | 3-4 partidas completas ajustando `config.py` + `waves.json` |
 
 **Demo viernes 2 nov:**
 - Partida completa 1-10 oleadas + victoria
 - 3 enemigos funcionales
 - Menús navegables teclado + mouse
 - Highscores guardan y muestran
-- Assets finales, sonidos, música
+- Assets finales, música
 - 0 crashes, 60 FPS
 
 ---
@@ -117,7 +114,7 @@
 | Bugfix regression (0 críticos) | Todos | Issues GitHub cerrados, re-test tras cada fix |
 | PyInstaller build .exe | Nelson | `dist/game.exe` funciona en PC sin Python, assets incluidos |
 | README final | Leslie | Controles, cómo jugar, arquitectura, patrones, créditos, build |
-| Video gameplay 2 min | Leslie | OBS 60 FPS, muestra: menú, gameplay oleadas 1-3, boss 5, upgrade shop, victoria |
+| Video gameplay 2 min | Leslie | OBS 60 FPS, muestra: menú, gameplay oleadas 1-3, boss 5, fin de oleada, victoria |
 | Docs defensa oral | Cada uno | Diagrama flujo módulo (papel/draw.io), 2 capturas código clave, 1 bug difícil resuelto |
 | Ensayo defensa grupal | Todos | Cada uno explica 3-5 min, preguntas cruzadas, tiempo total < 30 min |
 
@@ -134,7 +131,7 @@
 | Segunda arena (layout distinto) | Lilian + Zebedeo | `config/arenas.json`, selector en menú |
 | Stats screen post-partida | Aron | Accuracy, tiempo, kills por tipo, upgrades comprados |
 | Dificultad ajustable (Fácil/Normal/Difícil) | Nelson | Multiplicadores en `config.py` |
-| Polish visual extra | Leslie | Partículas únicas por arma, trails, shaders simples |
+| Polish visual extra | Leslie | Trails simples, shaders opcionales |
 | Bugs edge cases | Todos | Esquinas, spawns raros, memory leaks |
 
 ---
@@ -155,11 +152,9 @@
 | WaveManager + waves.json | | ✅ | ✅ | ✅ | | Lilian |
 | Boss Wave 5 | | | ✅ | | | Lilian |
 | Barreras fijas (4) | | | ✅ | | | Zebedeo |
-| Partículas + Screen Shake | | | ✅ | | | Zebedeo |
-| Debug Tools | | | ✅ | | | Zebedeo |
+| Screen Shake | | | ✅ | | | Zebedeo |
 | HUD | | ✅ | | | | Aron |
 | Menús (Main, Pause, GO/Victory) | | | | ✅ | | Aron |
-| Upgrade Shop (6 fijos) + upgrades.json | | | ✅ | | | Aron |
 | Sonidos + Música | | | | ✅ | | Leslie + Aron |
 | Assets (sprites, animaciones) | ✅ placeholders | | | ✅ finales | | Leslie |
 | Animation System | | | | ✅ | | Leslie |

@@ -1,6 +1,6 @@
 """Sistema de guardado/carga de highscores y estadísticas.
 
-Maneja persistencia en JSON: top 10 highscores, estadísticas totales, unlocks.
+Maneja persistencia en JSON: top 5 highscores, estadísticas totales, unlocks.
 """
 
 import json
@@ -46,7 +46,7 @@ def _save_raw(data: dict) -> None:
     except OSError:
         pass  # Silencioso: si no se puede guardar, el juego sigue funcionando
 
-# HIGHSCORES (Top 10)
+# HIGHSCORES (Top 5)
 
 def load_highscores() -> List[dict]:
     """Devuelve lista de highscores ordenados (mejor primero)."""
@@ -64,7 +64,7 @@ def save_highscores(scores: List[dict]) -> None:
 def add_highscore(name: str, wave: int, gold: int) -> int:
     """
     Añade un highscore y devuelve su posición en el ranking (1-indexed).
-    Retorna 0 si no entró en el top 10.
+    Retorna 0 si no entró en el top 5.
     """
     from datetime import datetime
     
@@ -81,8 +81,8 @@ def add_highscore(name: str, wave: int, gold: int) -> int:
     scores.append(new_entry)
     # Ordenar: mayor wave primero, luego mayor gold
     scores.sort(key=lambda s: (s["wave"], s["gold"]), reverse=True)
-    # Mantener solo top 10
-    scores = scores[:10]
+    # Mantener solo top 5
+    scores = scores[:5]
     
     data["highscores"] = scores
     _save_raw(data)
@@ -95,9 +95,9 @@ def add_highscore(name: str, wave: int, gold: int) -> int:
 
 
 def is_new_highscore(wave: int, gold: int) -> bool:
-    """Verifica si una puntuación entraría en el top 10."""
+    """Verifica si una puntuación entraría en el top 5."""
     scores = load_highscores()
-    if len(scores) < 10:
+    if len(scores) < 5:
         return True
     worst = scores[-1]
     return (wave > worst["wave"]) or (wave == worst["wave"] and gold > worst["gold"])

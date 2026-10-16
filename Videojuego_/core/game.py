@@ -6,15 +6,6 @@ import pygame
 from config import *
 from core.events import EventType, event_bus, GameState
 from ui.hud import HUD
-from systems.upgrade_shop import (
-    get_affordable_upgrades,
-    can_afford,
-    is_purchased,
-    mark_purchased,
-    upgrade_purchase,
-    _UPGRADE_CONFIG,
-)
-from ui.upgrade_ui import draw_upgrade_shop
 from systems.highscore import add_highscore, is_new_highscore, get_highscores
 from systems.config_manager import load_prefs, set as config_set, get as config_get, toggle_fullscreen, DEFAULT_PREFS, save_prefs
 from systems.wave_manager import WaveManager
@@ -26,7 +17,6 @@ from entities.systems.combat import (
     check_player_enemy_collision,
     check_enemy_barrier_collision,
     register_screen_shake,
-    register_spawn_particles,
     register_damage_number,
     register_flash_callback,
 )
@@ -38,7 +28,6 @@ class Game:
         self.clock = pygame.time.Clock()
         self.hud = HUD()
         self.config = load_prefs()  # Cargar configuración al iniciar
-        self.upgrade_shop = None  # Se inicializa después cuando sea necesario
         self.wave_manager = WaveManager(self)  # WaveManager
         
         # Sistema de armas (Strategy Pattern)
@@ -51,7 +40,6 @@ class Game:
         
         # Registrar callbacks para efectos visuales
         register_screen_shake(self._screen_shake)
-        register_spawn_particles(self._spawn_particles)
         register_damage_number(self._show_damage_number)
         register_flash_callback(self._flash_entity)
         
@@ -67,7 +55,6 @@ class Game:
         self.enemies = []
         self.projectiles = []
         self.barriers = []
-        self.particles = []
         self.powerups = []
         # Game state
         self.gold = STARTING_GOLD
@@ -78,6 +65,9 @@ class Game:
         # flags
         self._game_over_triggered = False
         self._victory_triggered = False
+        # Tiempo que se muestra el mensaje "Fin de la Oleada" entre oleadas (segundos)
+        self.WAVE_END_DURATION = 3.0
+        self._wave_end_timer = 0.0
         # Screen shake
         self._screen_shake_intensity = 0.0
         self._screen_shake_timer = 0.0
@@ -138,8 +128,8 @@ class Game:
                 self.handle_events_config()
             elif self.state == GameState.HIGHSCORES:
                 self.handle_events_highscore()
-            elif self.state == GameState.UPGRADE:
-                self.handle_events_upgrade()
+            elif self.state == GameState.WAVE_END:
+                self.handle_events_wave_end()
             elif self.state == GameState.GAME_OVER:
                 self.handle_events_game_over()
             elif self.state == GameState.NAME_ENTRY:
@@ -148,6 +138,8 @@ class Game:
             # Update según estado
             if self.state == GameState.PLAYING:
                 self.update(dt)
+            elif self.state == GameState.WAVE_END:
+                self._update_wave_end(dt)
 
             # Draw según estado
             if self.state == GameState.MENU:
@@ -160,8 +152,8 @@ class Game:
                 self.draw_config()
             elif self.state == GameState.HIGHSCORES:
                 self.draw_highscore_screen()
-            elif self.state == GameState.UPGRADE:
-                self.draw_upgrade()
+            elif self.state == GameState.WAVE_END:
+                self.draw_wave_end()
             elif self.state == GameState.GAME_OVER:
                 self.draw_game_over()
             elif self.state == GameState.NAME_ENTRY:
@@ -458,8 +450,8 @@ class Game:
             self.reset_game()
             self.wave_number = 1
             self.wave_manager.start_wave(1)
-        # Siguiente oleada tras UPGRADE
-        elif old_state == GameState.UPGRADE and new_state == GameState.PLAYING:
+        # Siguiente oleada tras el mensaje "Fin de la Oleada"
+        elif old_state == GameState.WAVE_END and new_state == GameState.PLAYING:
             self.wave_number += 1
             self.wave_manager.start_wave(self.wave_number)
 
@@ -471,7 +463,6 @@ class Game:
         self.enemies.clear()
         self.projectiles.clear()
         self.barriers.clear()
-        self.particles.clear()
         self.powerups.clear()
         self.gold = STARTING_GOLD
         self.wave_number = 1
@@ -495,9 +486,6 @@ class Game:
         self.player["spread_mult"] = 1.0
         self.player["speed_mult"] = 1.0
         self.player["pierce_bonus"] = 0
-        # Reset purchased upgrades
-        from systems.upgrade_shop import _purchased_upgrades
-        _purchased_upgrades.clear()
 
     def get_weapon_stats(self, weapon):
         stats = {
@@ -640,8 +628,8 @@ class Game:
             min_dist = float('inf')
             for barrier in self.barriers:
                 if barrier.alive:
-                    bdx = barrier.x - enemy["x"]
-                    bdy = barrier.y - enemy["y"]
+                    bdx = barrier.x - enemy.x
+                    bdy = barrier.y - enemy.y
                     bdist = math.hypot(bdx, bdy)
                     if bdist < min_dist:
                         min_dist = bdist
@@ -654,24 +642,24 @@ class Game:
                 tx, ty = px, py
 
             # Vector hacia objetivo
-            dx = tx - enemy["x"]
-            dy = ty - enemy["y"]
+            dx = tx - enemy.x
+            dy = ty - enemy.y
             dist = math.hypot(dx, dy)
 
             if dist > 0:
                 # Normalizar y mover
                 dx /= dist
                 dy /= dist
-                enemy["x"] += dx * enemy["speed"] * dt
-                enemy["y"] += dy * enemy["speed"] * dt
+                enemy.x += dx * enemy.speed * dt
+                enemy.y += dy * enemy.speed * dt
 
             # Colisión con barrera (atacar)
             for barrier in self.barriers:
                 if barrier.alive:
-                    enemy_rect = pygame.Rect(enemy["x"] - enemy["radius"], enemy["y"] - enemy["radius"], enemy["radius"] * 2, enemy["radius"] * 2)
+                    enemy_rect = pygame.Rect(enemy.x - enemy.radius, enemy.y - enemy.radius, enemy.radius * 2, enemy.radius * 2)
                     if barrier.rect.colliderect(enemy_rect):
-                        destroyed = barrier.take_damage(enemy["damage"])
-                        event_bus.publish(EventType.BARRIER_DAMAGED, {"barrier": barrier, "damage": enemy["damage"]})
+                        destroyed = barrier.take_damage(enemy.damage)
+                        event_bus.publish(EventType.BARRIER_DAMAGED, {"barrier": barrier, "damage": enemy.damage})
                         if destroyed:
                             event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
                         break  # Una barrera por frame
@@ -691,11 +679,11 @@ class Game:
                     self.player_died()
 
             # Eliminar enemigos muertos (HP <= 0)
-            if enemy.get("hp", 0) <= 0:
+            if enemy.hp <= 0:
                 self.enemies.remove(enemy)
-                self.gold += enemy.get("gold", 0)
+                self.gold += enemy.gold
                 self.enemies_killed += 1
-                event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy.get("gold", 0)})
+                event_bus.publish(EventType.ENEMY_DIED, {"enemy": enemy, "gold": enemy.gold})
 
     def update_barriers(self, dt):
         """Actualizar las barreras y que se eliminen las destruidas"""
@@ -729,7 +717,7 @@ class Game:
             
             # Si el enemigo murió, dar oro
             if died:
-                self.gold += enemy.get("gold", 0)
+                self.gold += enemy.gold
                 self.enemies_killed += 1
                 # El evento ENEMY_DIED ya se publica en apply_damage
 
@@ -756,11 +744,6 @@ class Game:
         """Callback para screen shake."""
         self._screen_shake_intensity = intensity
         self._screen_shake_timer = duration
-
-    def _spawn_particles(self, p_type: str, x: float, y: float, color: tuple, count: int):
-        """Callback para spawn de partículas."""
-        # Por ahora solo log, se puede conectar a particle system cuando esté listo
-        pass  # TODO: Conectar a ParticlePool cuando esté integrado
 
     def _show_damage_number(self, x: float, y: float, amount: int, color: tuple):
         """Callback para mostrar número de daño flotante."""
@@ -847,71 +830,33 @@ class Game:
 
         pygame.display.flip()
 
-    def handle_events_upgrade(self):
-        """Maneja los eventos durante el estado de mejora."""
+    def handle_events_wave_end(self):
+        """Maneja eventos durante el mensaje 'Fin de la Oleada'.
+
+        No hay input de compra (tienda removida); el estado avanza solo
+        pasados los 3 segundos para evitar bugs entre oleadas.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.change_state(self.previous_state or GameState.MENU)
-                elif event.key == pygame.K_RETURN:
-                    affordable = get_affordable_upgrades(self.gold)
-                    if affordable:
-                        success, new_gold, updated_stats = upgrade_purchase(
-                            affordable[0]["id"], self.gold
-                        )
-                        if success:
-                            self.gold = new_gold
-                            if updated_stats:
-                                if "weapon_pierce" in updated_stats:
-                                    self.player['weapon_pierce'] = updated_stats['weapon_pierce']
-                                if "weapon_damage" in updated_stats:
-                                    self.player['weapon_damage'] = updated_stats['weapon_damage']
-                                if "weapon_spread" in updated_stats:
-                                    self.player['weapon_spread'] = updated_stats['weapon_spread']
-                                if "weapon_cooldown" in updated_stats:
-                                    self.player['weapon_cooldown'] = updated_stats['weapon_cooldown']
-                                if "max_hp" in updated_stats:
-                                    self.player['max_hp'] = updated_stats['max_hp']
-                                    self.player['hp'] = min(self.player.get('hp', 1), self.player['max_hp'])
-                            self.change_state(self.previous_state or GameState.MENU)
 
-    def draw_upgrade(self):
-        """Dibuja la interfaz de la tienda de mejoras."""
+    def _update_wave_end(self, dt: float):
+        """Avanza el temporizador de 'Fin de la Oleada' y pasa a PLAYING al terminar."""
+        self._wave_end_timer += dt
+        if self._wave_end_timer >= self.WAVE_END_DURATION:
+            self._wave_end_timer = 0.0
+            self.change_state(GameState.PLAYING)
+
+    def draw_wave_end(self):
+        """Dibuja el mensaje 'Fin de la Oleada' entre oleadas."""
         self.screen.fill(BLACK)
 
-        title_text = self.big_font.render("TIENDA DE MEJORAS", True, YELLOW)
-        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 4))
+        title_text = self.big_font.render("FIN DE LA OLEADA", True, YELLOW)
+        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         self.screen.blit(title_text, title_rect)
 
-        clicked_rects = draw_upgrade_shop(
-            self.screen,
-            self.font,
-            self.small_font,
-            self.gold,
-            show_purchased=True
-        )
-
-        mouse_pos = pygame.mouse.get_pos()
-        for i, click_rect in enumerate(clicked_rects):
-            if click_rect.collidepoint(mouse_pos) and pygame.mouse.get_pressed()[0]:
-                affordable = get_affordable_upgrades(self.gold)
-                if i < len(affordable):
-                    success, new_gold, updated_stats = upgrade_purchase(
-                        affordable[i]["id"], self.gold
-                    )
-                    if success:
-                        self.gold = new_gold
-                        self.change_state(self.previous_state or GameState.MENU)
-
-        gold_text = self.font.render(f"Oro: {self.gold}", True, WHITE)
-        self.screen.blit(gold_text, (WIDTH - 120, 30))
-
-        instr = self.font.render(
-            "PRECIONA ENTER PARA COMPRAR O ESC PARA VOLVER", True, DARK_GRAY
-        )
-        instr_rect = instr.get_rect(center=(WIDTH // 2, HEIGHT - 40))
+        instr = self.font.render("PREPARATE PARA LA SIGUIENTE...", True, WHITE)
+        instr_rect = instr.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 60))
         self.screen.blit(instr, instr_rect)
 
         pygame.display.flip()
@@ -929,7 +874,7 @@ class Game:
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             self.screen.blit(text, rect)
         else:
-            text = self.big_font.render("GAME OVER", True, RED)
+            text = self.big_font.render("FIN DEL JUEGO", True, RED)
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
             self.screen.blit(text, rect)
 

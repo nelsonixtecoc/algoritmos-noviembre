@@ -3,6 +3,9 @@ import math
 from pathlib import Path
 from utils.helpers import random_spawn_point
 from core.events import event_bus, EventType, GameState
+from entities.enemies.basic import Basic
+from entities.enemies.tank import Tank
+from entities.enemies.speedy import Speedy
 from config import *
 
 
@@ -19,7 +22,6 @@ class WaveManager:
         self.total_enemies_this_wave = 0
         self.wave_active = False
         self.between_waves = False
-        self.upgrade_shop_active = False
 
     def _load_waves(self):
         path = Path(__file__).resolve().parents[1] / "config" / "waves.json"
@@ -33,7 +35,6 @@ class WaveManager:
         wave = self.waves_data[self.current_wave_index]
         self.wave_active = True
         self.between_waves = False
-        self.upgrade_shop_active = False
         self.enemies_spawned_this_wave = 0
         self.wave_timer = 0.0
 
@@ -92,21 +93,22 @@ class WaveManager:
         """Spawnea un enemigo con multiplicador de HP."""
         x, y = random_spawn_point(WIDTH, HEIGHT, margin=50)
 
-        base_stats = {
-            "basic": {"hp": ENEMY_BASIC_HP, "speed": ENEMY_BASIC_SPEED, "damage": ENEMY_BASIC_DAMAGE, "gold": ENEMY_BASIC_GOLD, "color": (200, 50, 50), "radius": 16, "knockback_resist": 0.0},
-            "tank": {"hp": ENEMY_TANK_HP, "speed": ENEMY_TANK_SPEED, "damage": ENEMY_TANK_DAMAGE, "gold": ENEMY_TANK_GOLD, "color": (100, 100, 200), "radius": 20, "knockback_resist": ENEMY_TANK_KNOCKBACK_RESIST},
-            "speedy": {"hp": ENEMY_SPEEDY_HP, "speed": ENEMY_SPEEDY_SPEED, "damage": ENEMY_SPEEDY_DAMAGE, "gold": ENEMY_SPEEDY_GOLD, "color": (50, 200, 50), "radius": 12, "knockback_resist": 0.0, "dodge_chance": ENEMY_SPEEDY_DODGE_CHANCE},
-        }
+        # Crear el objeto según el tipo
+        if enemy_type == "basic":
+            enemigo = Basic(x, y)
+        elif enemy_type == "tank":
+            enemigo = Tank(x, y)
+        elif enemy_type == "speedy":
+            enemigo = Speedy(x, y)
+        else:
+            enemigo = Basic(x, y)
 
-        stats = base_stats.get(enemy_type, base_stats["basic"]).copy()
-        stats["hp"] = int(stats["hp"] * hp_mult)
-        stats["max_hp"] = stats["hp"]
-        stats["x"] = x
-        stats["y"] = y
-        stats["type"] = enemy_type
+        # Aplicar multiplicador de HP de la oleada
+        enemigo.hp = int(enemigo.hp * hp_mult)
+        enemigo.max_hp = enemigo.hp
 
-        self.game.enemies.append(stats)
-        event_bus.publish(EventType.ENEMY_SPAWNED, {"enemy": stats, "type": enemy_type})
+        self.game.enemies.append(enemigo)
+        event_bus.publish(EventType.ENEMY_SPAWNED, {"enemy": enemigo, "type": enemy_type})
 
     def _wave_completed(self):
         wave = self.waves_data[self.current_wave_index]
@@ -119,8 +121,9 @@ class WaveManager:
             self.game.change_state(GameState.GAME_OVER)
             return
 
-        # Entre oleadas: upgrade shop
-        self.between_waves = True
-        self.wave_timer = self.waves_data[0].get("wave_cooldown", 5.0)
+        # Entre oleadas: mostramos "Fin de la Oleada" durante 3 segundos.
+        # El juego (core/game.py) se encarga de pasar a la siguiente oleada sola.
+        self.between_waves = False
+        self.wave_timer = 0.0
         event_bus.publish(EventType.WAVE_COMPLETED, {"wave": wave_number, "gold_bonus": 100})
-        self.game.change_state(GameState.UPGRADE)
+        self.game.change_state(GameState.WAVE_END)

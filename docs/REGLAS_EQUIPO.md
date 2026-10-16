@@ -241,16 +241,13 @@ event_bus.publish(EventType.ENEMY_KILLED, {"gold": 10, "pos": enemy.pos})
 
 # En wave_manager.py - escuchar
 event_bus.subscribe(EventType.WAVE_COMPLETE, self.on_wave_complete)
-
-# En particles.py - escuchar
-event_bus.subscribe(EventType.ENEMY_DIED, self.spawn_death_particles)
 ```
 **Eventos definidos (enum `EventType` en `core/events.py`):**
 - `PLAYER_DAMAGED`, `PLAYER_DIED`, `PLAYER_SHOOT`, `WEAPON_SWITCHED`
 - `ENEMY_SPAWNED`, `ENEMY_DIED`, `ENEMY_REACHED_BASE`
 - `BARRIER_DAMAGED`, `BARRIER_DESTROYED`
 - `WAVE_STARTED`, `WAVE_COMPLETED`, `BOSS_SPAWNED`, `BOSS_PHASE_CHANGE`
-- `UPGRADE_PURCHASED`, `GOLD_CHANGED`
+- `GOLD_CHANGED`
 - `GAME_OVER`, `VICTORY`, `STATE_CHANGED`
 
 ### Dependencias Permitidas (Direccionales - NO circulares)
@@ -296,8 +293,8 @@ config/         →  nadie (solo JSON data)
 | **Tech Lead / Core** | Nelson | Arquitectura, `core/`, `config.py`, `utils/helpers.py`, merge strategy, build, scope freeze, code review owner |
 | **Player & Weapons** | Fabiola | `entities/player.py`, `entities/weapons/`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base), feel controles |
 | **Enemies & Waves** | Lilian | `entities/enemies/`, `systems/wave_manager.py`, `config/waves.json`, IA, spawning, balanceo oleadas |
-| **Barriers & Particles** | Zebedeo | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py`, object pooling, screen shake, visual feedback |
-| **UI, Upgrades & Menus** | Aron | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json`, `core/save_load.py` (highscores), sonidos integración |
+| **Barriers** | Zebedeo | `entities/barrier.py`, object pooling, screen shake, visual feedback |
+| **UI & Menus** | Aron | `ui/hud.py`, `ui/menus.py`, `ui/game_over.py`, `core/save_load.py` (highscores), sonidos integración |
 | **Assets & QA Lead** | Leslie | `assets/`, `utils/animation.py`, testing manual, bug tracking, README, video demo, placeholders → finales |
 
 **Decisiones técnicas compartidas** (requieren consenso 4/6):
@@ -317,7 +314,7 @@ config/         →  nadie (solo JSON data)
 
 ### Debugging
 - `python -m debugpy --listen 5678 --wait-for-client main.py` + VS Code Debug
-- `utils/debug.py`: `DEBUG = True` → muestra hitboxes, FPS, entity counts, wave info
+
 
 ### Assets
 - **Sprites:** Aseprite (pago), LibreSprite (gratis), Piskel (web)

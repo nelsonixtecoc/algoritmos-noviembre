@@ -32,11 +32,6 @@ class Weapon(ABC):
     recoil_amount: float = 5.0
     screen_shake_intensity: float = 0.0
     
-    # Sound hooks (sobrescribir con paths reales)
-    shoot_sound: Optional[str] = None
-    reload_sound: Optional[str] = None
-    empty_sound: Optional[str] = None
-    
     def __init__(self):
         self.last_shot_time: float = 0.0
         self._cooldown_timer: float = 0.0

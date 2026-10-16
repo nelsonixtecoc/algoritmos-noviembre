@@ -22,12 +22,11 @@
 | **Enemigos Básicos** | 3 tipos: Basic (estándar), Tank (HP alto, lento), Speedy (rápido, frágil) | P0 |
 
 | **Barreras** | 4 fijas (esquinas zona player), HP visible, objetivo prioritario enemigos | P0 |
-| **Tienda Mejoras (Upgrade Shop)** | Entre oleadas: 6 upgrades fijos (daño, cadencia, vida, velocidad, barrera+, oro+) | P0 |
-| **Economía** | Oro por matar → gasto en mejoras | P0 |
+| **Economía** | Oro por matar (se acumula, no se gasta en tienda) | P0 |
 | **HUD** | Vidas (3 corazones), ronda (1/10), enemigos vivos, oro, arma actual (1-3), cooldown visual | P0 |
-| **Highscores** | Top 10 persistente en JSON + entrada nombre en Game Over/Victoria | P1 |
-| **Partículas + Juice** | Pool: impacto, muerte + screen shake + flash daño | P1 |
-| **Menús** | Main, Pause, Game Over/Victoria compartida (input nombre), Upgrade Shop | P0 |
+| **Highscores** | Top 5 persistente en JSON + entrada nombre en Game Over/Victoria | P1 |
+| **Juice** | Screen shake + flash daño | P1 |
+| **Menús** | Main, Pause, Game Over/Victoria compartida (input nombre) | P0 |
 
 ---
 
@@ -39,7 +38,7 @@ wave_defense/
 ├── main.py                    # Entry point, init pygame, Game instance
 ├── config.py                  # Constantes: WIDTH, HEIGHT, FPS, COLORS, BALANCE
 ├── core/
-│   ├── game.py                # Game loop, StateMachine (MENU, PLAYING, UPGRADE, PAUSED, GAME_OVER)
+│   ├── game.py                # Game loop, StateMachine (MENU, PLAYING, WAVE_END, PAUSED, GAME_OVER)
 │   ├── events.py              # EventBus simple (publish/subscribe)
 │   └── save_load.py           # JSON: highscores, stats, unlocks
 ├── entities/
@@ -55,28 +54,25 @@ wave_defense/
 │   │   ├── enemy.py           # Base: target (base/player), state, path_simple
 │   │   ├── basic.py
 │   │   ├── tank.py
-│   │   ├── speedy.py
-│   │   └── boss.py            # Fases, patrones, weak point
+│   │   └── speedy.py
 │   └── barrier.py             # Sprite con HP, rect, draw_health_bar (4 fijas)
 ├── systems/
 │   ├── wave_manager.py        # Spawner: oleadas configurables, contador vivos, timer
-│   ├── upgrade_shop.py        # Entre oleadas: 6 opciones fijas, compra con oro
 │   ├── combat.py              # apply_damage, knockback, collide_projectile_enemy
-│   └── particles.py           # Pool de partículas: impacto, muerte, screen_shake
+│   └── save_load.py           # JSON: highscores (mismo que core/save_load.py)
 ├── ui/
 │   ├── hud.py                 # Corazones, ronda, enemigos vivos, oro, arma actual
 │   ├── menus.py               # MainMenu, PauseMenu, GameOver (compartido Victoria)
-│   └── upgrade_ui.py          # Lista 6 upgrades: nombre, desc, costo, key 1-6
+│   └── game_over.py           # Pantalla Game Over/Victoria + input nombre
 ├── utils/
 │   ├── animation.py           # SpriteSheet: frames, duration, loop, flip
 │   ├── helpers.py             # clamp, lerp, angle_to, distance, load_spritesheet
-│   └── debug.py               # Hitbox toggle, FPS, entity counts
+
 ├── config/
 │   ├── waves.json             # Definición oleadas 1-10 + boss wave 5
-│   └── upgrades.json          # 6 mejoras fijas comprables
 └── assets/
-    ├── sprites/{player,enemies,weapons,barrier,ui,particles}
-    ├── sounds/{sfx,music}
+    ├── sprites/{player,enemies,weapons,barrier,ui,pickups}
+    ├── sounds/{music}         # Música de fondo (opcional)
     └── fonts/
 ```
 
@@ -84,17 +80,15 @@ wave_defense/
 ```
 main.py → Game.init() → Game.run()
   ├─ State.MENU → Menu.handle_events/update/draw
-  ├─ State.PLAYING → WaveManager.update + Player.update + Enemies.update + Barriers.update + Particles.update + HUD.draw
-  ├─ State.UPGRADE → UpgradeShop.draw + input (1-6 para comprar) → auto-vuelve a PLAYING
+  ├─ State.PLAYING → WaveManager.update + Player.update + Enemies.update + Barriers.update + HUD.draw
+  ├─ State.WAVE_END → Mensaje "Fin de la Oleada" (3 segundos) → auto-vuelve a PLAYING con siguiente oleada
   ├─ State.PAUSED → Overlay + Menu pausa
   └─ State.GAME_OVER → Input nombre → save highscore → Menu (Victoria reusa esta pantalla)
 ```
 
 ### 3.3 Patrones de Diseño Clave
 - **Strategy Pattern**: `Weapon` base + 3 subclases → `Player` cambia arma en runtime
-- **Event Bus**: `core/events.py` → desacopla Player, Enemies, Combat, Particles, HUD
-- **Object Pool**: `systems/particles.py` → reusa instancias, evita GC
-- **Data-Driven**: `waves.json` + `upgrades.json` → balanceo sin tocar código
+- **Event Bus**: `core/events.py` → desacopla Player, Enemies, Combat, HUD
 - **State Machine**: `GameState` enum → transiciones claras, fácil debug
 
 ---
@@ -107,9 +101,9 @@ main.py → Game.init() → Game.run()
 |------------|---------------|----------------------|----------------|
 | **1 - Nelson** | **Líder Técnico / Core** | Game loop, State machine, EventBus, Save/Load, Build, Code Review | `main.py`, `config.py`, `core/game.py`, `core/events.py`, `core/save_load.py`, `utils/helpers.py` |
 | **2 - Fabiola** | **Player & Weapons System** | Player, Input, Armas (Strategy - 3), Proyectiles, Sistema Combate | `entities/player.py`, `entities/weapons/*.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` (base) |
-| **3 - Lilian** | **Enemies & Wave System** | Enemigos (3 tipos + 1 Boss), WaveManager (10 oleadas), Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
-| **4 - Zebedeo** | **Barriers & Particles** | Barreras fijas (4 posiciones, HP, draw), Particle Pool básico, Screen Shake, Debug | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py` |
-| **5 - Aron** | **UI, Upgrades & Menus** | HUD, Menús, Upgrade Shop (6 fijos), Highscores, Game Over/Victoria input | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json` |
+| **3 - Lilian** | **Enemies & Wave System** | Enemigos (3 tipos: Basic, Tank, Speedy), WaveManager (10 oleadas), Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
+| **4 - Zebedeo** | **Barriers** | Barreras fijas (4 posiciones, HP, draw), Screen Shake | `entities/barrier.py` |
+| **5 - Aron** | **UI & Menus** | HUD, Menús, Highscores, Game Over/Victoria input | `ui/hud.py`, `ui/menus.py`, `ui/game_over.py` |
 | **6 - Leslie** | **Assets & QA Lead** | Sprites, Animaciones, Sonidos, Testing, Bug Tracking, Docs, Video Demo | `assets/` (organizado), `utils/animation.py`, README, checklist QA |
 
 ---
@@ -121,7 +115,7 @@ main.py → Game.init() → Game.run()
 | **H0: Setup & Core Base** | Fin Semana 1 (12 oct) | Repo clonado, pygame corre 60 FPS, ventana 640×480, State machine MENU↔PLAYING↔PAUSE, EventBus funciona, placeholders assets, git flow + ruff/black |
 | **H1: Player + 3 Armas + 3 Enemigos + Oleadas** | Fin Semana 2 (19 oct) | Player: movimiento 8-dir, switch 3 armas, disparo con cooldown. 3 enemigos básicos funcionales. WaveManager lee JSON y spawnea oleadas 1-5. Colisión proyectil-enemigo → daño → muerte → drop oro. HUD completo (ronda 1/10). |
 | **H2: Barreras fijas + Partículas + Upgrade Shop (6 fijos) + Boss** | Fin Semana 3 (26 oct) | Barreras fijas (4) con HP visible. Particle pool + screen shake. Upgrade Shop entre oleadas: 6 opciones fijas, compra con oro. Boss oleada 5 funcional (3 fases). |
-| **H3: Contenido Completo + Polish** | Fin Semana 4 (2 nov) | Oleadas 1-10 balanceadas en JSON. Highscores persistentes top 10 + input nombre. Menús completos (main, pause, game over/victory compartida). Assets finales integrados. |
+| **H3: Contenido Completo + Polish** | Fin Semana 4 (2 nov) | Oleadas 1-10 balanceadas en JSON. Highscores persistentes top 5 + input nombre. Menús completos (main, pause, game over/victory compartida). Assets finales integrados. |
 | **H4: Testing + Build + Defensa** | Fin Semana 5 (9 nov) | Checklist 30+ casos probados. 0 bugs críticos. PyInstaller .exe funciona. README + diagrama arquitectura + video 2 min. Cada integrante explica su módulo en 3-5 min. |
 | **Buffer / Polish Extra** | Semana 6 (14 nov) | Solo si hace falta: dificultad, edge cases, polish extra. |
 

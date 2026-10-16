@@ -1,5 +1,10 @@
 # Tareas por Integrante - Wave Defense (Scope Reducido ~2000 líneas)
 
+> **⚠️ CAMBIOS RECENTES (Noviembre 2026):**
+> - Se eliminó el **sistema de partículas** (`systems/particles.py`, constantes `PARTICLE_*`, `LAYER_PARTICLES`).
+> - Se eliminaron los **sonidos (SFX)** (`shoot_sound`, `reload_sound`, `empty_sound` en armas). Solo se deja música de fondo opcional para agregar después.
+> - En su lugar, al terminar cada oleada aparece el estado **"Fin de la Oleada" (`WAVE_END`)** durante 3 segundos antes de pasar a la siguiente oleada.
+
 ## Asignación de Roles (6 Integrantes)
 
 | # | Integrante | Rol | Módulos Responsables | Archivos Clave |
@@ -7,9 +12,9 @@
 | 1 | **Nelson** | Líder Técnico / Core | Game loop, State machine, EventBus, Save/Load, Build, Code Review | `main.py`, `config.py`, `core/game.py`, `core/events.py`, `core/save_load.py`, `utils/helpers.py` |
 | 2 | **Fabiola** | Player & Weapons System | Player, Input, Armas (Strategy - 3 armas), Proyectiles, Sistema Combate | `entities/player.py`, `entities/weapons/*.py`, `entities/projectile.py`, `systems/combat.py`, `entities/entity.py` |
 | 3 | **Lilian** | Enemies & Wave System | Enemigos (3 tipos), WaveManager (10 oleadas), Spawning data-driven | `entities/enemies/*.py`, `systems/wave_manager.py`, `config/waves.json` |
-| 4 | **Zebedeo** | Barriers & Particles | Barreras fijas (4 posiciones, HP, draw), Particle Pool básico, Screen Shake, Debug | `entities/barrier.py`, `systems/particles.py`, `utils/debug.py` |
-| 5 | **Aron** | UI, Upgrades & Menus | HUD, Menús, Upgrade Shop (6 fijos), Highscores, Game Over/Victory input | `ui/hud.py`, `ui/menus.py`, `ui/upgrade_ui.py`, `systems/upgrade_shop.py`, `config/upgrades.json` |
-| 6 | **Leslie** | Assets & QA Lead | Sprites, Animaciones, Sonidos, Testing, Bug Tracking, Docs, Video Demo | `assets/`, `utils/animation.py`, README, checklist QA |
+| 4 | **Zebedeo** | Barriers & Pickups | Barreras fijas (4 posiciones, HP, draw), Screen Shake, Sistema de Pickups | `entities/barrier.py`, `entities/pickup.py` |
+| 5 | **Aron** | UI & Menus | HUD, Menús, Highscores, Game Over/Victoria input | `ui/hud.py`, `ui/menus.py`, `ui/game_over.py`, `systems/save_load.py` |
+| 6 | **Leslie** | Assets & QA Lead | Sprites, Animaciones, Música de fondo (opcional), Testing, Bug Tracking, Docs, Video Demo | `assets/`, `utils/animation.py`, README, checklist QA |
 
 ---
 
@@ -20,9 +25,9 @@
 **Semana 1:**
 - [ ] `main.py` - Entry point, init pygame, instancia Game, bucle principal
 - [ ] `config.py` - Constantes: WIDTH, HEIGHT, FPS, COLORS, LAYERS, BALANCE (velocidad player, daño base, etc.)
-- [ ] `core/game.py` - Clase Game, StateMachine (MENU, PLAYING, UPGRADE, PAUSED, GAME_OVER, VICTORY), transiciones
+- [ ] `core/game.py` - Clase Game, StateMachine (MENU, PLAYING, WAVE_END, PAUSED, GAME_OVER, VICTORY), transiciones
 - [ ] `core/events.py` - EventBus: subscribe, publish, process (colisiones, daño, muerte, pickup, wave_complete)
-- [ ] `core/save_load.py` - JSON: highscores (top 10), stats totales, unlocks
+- [ ] `core/save_load.py` - JSON: highscores (top 5), stats totales, unlocks
 - [ ] `utils/helpers.py` - clamp, lerp, angle_to, distance, load_spritesheet, random_spawn_point
 - [ ] Setup repo: `.gitignore`, `requirements.txt` (pygame-ce), README inicial, pre-commit (ruff + black)
 
@@ -78,29 +83,30 @@
 
 **Semana 3:**
 - [ ] Tuning dificultad: HP, daño, timings por oleada en `waves.json`
-- [ ] Death animations + drop oro + partículas (EventBus)
+- [ ] Death animations + drop oro (EventBus)
 
 **Semana 4:**
 - [ ] Testing visual: claridad feedback, no spam partículas
 
 ---
 
-### 🧱 Integrante 4 - Zebedeo (Barriers & Particles)
+### 🧱 Integrante 4 - Zebedeo (Barriers & Pickups)
 
 **Semana 1:**
 - [ ] `entities/barrier.py` - Sprite con HP (max 200), rect, draw_health_bar(), take_damage() — **solo 4 posiciones fijas** (usa `default_positions()`)
 - [ ] Enemigos priorizan barreras si en rango → atacan → si destruida, van a player/base
+- [ ] `entities/pickup.py` - Clase base `Pickup` (pos, rect, collides, apply, draw), `HealthPickup` (cura hasta max_hp) y `SpeedPickup` (sube velocidad) — **ya iniciado**
 
 **Semana 2:**
-- [ ] `systems/particles.py` - Pool básico: 100 partículas pre-creadas. Tipos: `Impact` (chispas), `Death` (humo). `screen_shake(intensity, duration)`
-- [ ] `utils/debug.py` - Toggle hitboxes (F3), FPS counter, entity counts, wave info
+- [ ] Spawneo de pickups al matar enemigos (integrar con WaveManager / EventBus ENEMY_DIED)
+- [ ] Colisión player ↔ pickup y aplicación de efectos en game loop
+- [ ] Tiempo de vida / auto-desaparición de pickups no recogidos
 
 **Semana 3:**
 - [ ] Screen shake en: player hit, wave complete
-- [ ] Polish partículas: fade out, color por tipo enemigo
 
 **Semana 4:**
-- [ ] Testing visual: claridad feedback, no spam partículas
+- [ ] Testing visual: claridad feedback (barreras y pickups)
 
 ---
 
@@ -115,14 +121,12 @@
 - [ ] `ui/game_over.py` - Pantalla Game Over/Victoria compartida + input nombre (máx 12 chars, solo alfanumérico) → save highscore → volver a menú
 
 **Semana 3:**
-- [ ] `systems/upgrade_shop.py` - Carga `config/upgrades.json` (6 upgrades fijos), muestra todos, aplica efecto al comprar
-- [ ] `config/upgrades.json` - 6 upgrades fijos: daño +20%, cadencia -15%, vida max +1, velocidad +15%, barrera HP +50%, oro extra +25%
-- [ ] `ui/upgrade_ui.py` - Lista simple 6 upgrades: nombre, descripción, costo, tecla (1-6), confirmación Enter
-- [ ] Integración sonidos: `assets/sounds/` (sfx: shoot, hit, kill, coin, upgrade, wave_start, game_over)
+- [ ] Menús pulidos: transiciones fade in/out entre estados
+- [ ] Highscores: top 5 persistente, muestra en MainMenu y Game Over
 
 **Semana 4:**
 - [ ] Polish: transiciones fade in/out entre estados
-- [ ] Highscores: top 10 persistente, muestra en MainMenu y Game Over
+- [ ] Highscores: top 5 persistente, muestra en MainMenu y Game Over
 - [ ] Testing UX: legibilidad, navegación teclado/mouse, controles intuitivos
 
 ---
@@ -179,9 +183,6 @@
 | `systems/wave_manager.py` | `enemies/`, `config/waves.json` | Game loop playing | 2 |
 | `systems/combat.py` | `player.py`, `enemies/`, `projectile.py` | — | 2 |
 | `entities/barrier.py` | `entity.py` | Enemies (target) | 2 |
-| `systems/particles.py` | `events.py` | Todos (feedback visual) | 3 |
-| `systems/upgrade_shop.py` + `ui/upgrade_ui.py` | `player.py`, `config/upgrades.json` | Game state UPGRADE | 3 |
-| `entities/boss.py` | `enemy.py`, `particles.py` | Wave 5 | 3 |
 | `core/save_load.py` | `config.py` | Highscores, Game Over | 4 |
 | `ui/menus.py` + `ui/game_over.py` | `save_load.py` | — | 4 |
 
@@ -211,20 +212,19 @@
 - [ ] Wave 5: Boss aparece, 3 fases funcionan, weak point vulnerable
 - [ ] Enemigos: 3 tipos (Basic, Tank, Speedy) + 1 Boss, comportamientos distintos, mueren, dan oro
 - [ ] Barreras: 4 fijas, enemigos las atacan, HP visible
-- [ ] Upgrade Shop: aparece entre oleadas, 6 upgrades fijos, compra gasta oro, efecto aplicado
-- [ ] Highscores: guarda top 10, input nombre Game Over/Victoria, muestra en menú
+- [ ] Highscores: guarda top 5, input nombre Game Over/Victoria, muestra en menú
 - [ ] Victoria: oleada 10 completada → pantalla victoria (reusa Game Over) → highscore
 
 ### Visual / Audio
 - [ ] Assets finales integrados (no placeholders)
-- [ ] Partículas: impacto, muerte + screen shake
+- [ ] Screen shake en hits y muertes
 - [ ] Animaciones fluidas (player, enemigos, boss)
-- [ ] Sonidos: disparo, impacto, muerte, moneda, upgrade, ola, música
+- [ ] Música de fondo (opcional, integrar si hay tiempo)
 - [ ] HUD legible: vidas, ronda (1/10), oro, arma (1-3), cooldown, enemigos
 
 ### Técnico
 - [ ] 60 FPS estables (sin drops >5 frames)
-- [ ] Sin memory leaks (particle pool reusa, no crea inf)
+- [ ] Sin memory leaks
 - [ ] Build .exe funciona en PC sin Python
 - [ ] Git history limpio (commits atómicos, mensajes claros)
 

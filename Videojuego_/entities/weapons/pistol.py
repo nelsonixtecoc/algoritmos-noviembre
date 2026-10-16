@@ -23,7 +23,6 @@ class Pistol(Weapon):
     muzzle_flash_duration: float = 0.04
     recoil_amount: float = 3.0
     screen_shake_intensity: float = 1.0
-    shoot_sound: str = "shoot_pistol"
     
     def fire(self, x: float, y: float, angle: float, damage_mult: float = 1.0,
              cooldown_mult: float = 1.0, spread_mult: float = 1.0,

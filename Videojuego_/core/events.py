@@ -7,7 +7,7 @@ from typing import Any
 class GameState(Enum):
     MENU = "menu"
     PLAYING = "playing"
-    UPGRADE = "upgrade"
+    WAVE_END = "wave_end"
     PAUSED = "paused"
     CONFIG = "config"
     HIGHSCORES = "highscores"
@@ -33,7 +33,6 @@ class EventType(Enum):
     WAVE_STARTED = "wave_started"
     WAVE_COMPLETED = "wave_completed"
     #sistema
-    UPGRADE_PURCHASED = "upgrade_purchased"
     GOLD_CHANGED = "gold_changed"
     GAME_OVER = "game_over"
     VICTORY = "victory"

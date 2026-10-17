@@ -25,8 +25,8 @@ class Pistol(Weapon):
     screen_shake_intensity: float = 1.0
     
     def fire(self, x: float, y: float, angle: float, damage_mult: float = 1.0,
-             cooldown_mult: float = 1.0, spread_mult: float = 1.0,
-             speed_mult: float = 1.0, pierce_bonus: int = 0) -> List[Projectile]:
+            cooldown_mult: float = 1.0, spread_mult: float = 1.0,
+            speed_mult: float = 1.0, pierce_bonus: int = 0) -> List[Projectile]:
         
         return ProjectileFactory.create_spread_projectiles(
             self, x, y, angle, damage_mult, speed_mult, spread_mult, pierce_bonus

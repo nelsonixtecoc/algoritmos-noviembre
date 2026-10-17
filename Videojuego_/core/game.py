@@ -313,16 +313,18 @@ class Game:
         
         # Enemigos
         for enemy in self.enemies:
-            pygame.draw.circle(self.screen, enemy["color"], 
-                            (int(enemy["x"]), int(enemy["y"])), enemy["radius"])
+            if not enemy.alive:
+                continue
+            pygame.draw.circle(self.screen, enemy.color, 
+                            (int(enemy.x), int(enemy.y)), enemy.radius)
             # Barra de vida simple
-            if enemy["hp"] < enemy["max_hp"]:
+            if enemy.hp < enemy.max_hp:
                 bar_w = 30
-                ratio = enemy["hp"] / enemy["max_hp"]
+                ratio = enemy.hp / enemy.max_hp
                 pygame.draw.rect(self.screen, (64, 64, 64), 
-                            (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, bar_w, 4))
+                            (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, bar_w, 4))
                 pygame.draw.rect(self.screen, (0, 255, 0), 
-                               (enemy["x"] - bar_w//2, enemy["y"] - enemy["radius"] - 8, int(bar_w * ratio), 4))
+                               (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, int(bar_w * ratio), 4))
         # Barreras
         for barrier in self.barriers:
             barrier.draw(self.screen)
@@ -670,7 +672,7 @@ class Game:
                 died = apply_damage(
                     attacker=enemy,
                     target=self.player,
-                    amount=enemy["damage"],
+                    amount=enemy.damage,
                     knockback=50.0,
                     knockback_resist=0.0,
                     damage_type="normal"

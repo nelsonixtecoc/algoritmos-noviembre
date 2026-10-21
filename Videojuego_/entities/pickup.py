@@ -17,6 +17,19 @@ from config import (
 _ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites"
 
 
+def _get(player, key: str):
+    """Lee player[key] si es dict, o player.key si es objeto."""
+    return player[key] if isinstance(player, dict) else getattr(player, key)
+
+
+def _set(player, key: str, value) -> None:
+    """Escribe player[key] si es dict, o player.key si es objeto."""
+    if isinstance(player, dict):
+        player[key] = value
+    else:
+        setattr(player, key, value)
+
+
 class Pickup:
     """Objeto recogible por el jugador.
 
@@ -84,9 +97,11 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: "Player") -> None:
-        """Suma vida, pero nunca pasa de player.max_hp."""
-        player.hp = min(player.max_hp, player.hp + HEALTH_PICKUP_HEAL)
+    def apply(self, player: "Player | dict") -> None:
+        """Suma vida, pero nunca pasa del max_hp (dict o Player)."""
+        hp = _get(player, "hp")
+        max_hp = _get(player, "max_hp")
+        _set(player, "hp", min(max_hp, hp + HEALTH_PICKUP_HEAL))
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("health", self._SPRITE)
@@ -104,9 +119,9 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: "Player") -> None:
-        """Aumenta la velocidad base del jugador."""
-        player.speed += SPEED_PICKUP_BONUS
+    def apply(self, player: "Player | dict") -> None:
+        """Aumenta la velocidad base (dict o Player)."""
+        _set(player, "speed", _get(player, "speed") + SPEED_PICKUP_BONUS)
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("speed", self._SPRITE)

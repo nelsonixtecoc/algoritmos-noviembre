@@ -7,6 +7,7 @@ import pygame
 from config import (
     CYAN,
     HEALTH_PICKUP_HEAL,
+    PICKUP_LIFETIME,
     PICKUP_SIZE,
     RED,
     SPEED_PICKUP_BONUS,
@@ -31,8 +32,17 @@ class Pickup:
         self.x: float = float(x)
         self.y: float = float(y)
         self.alive: bool = True
+        self.age: float = 0.0  # segundos desde que aparecio
         self.rect = pygame.Rect(0, 0, self.SIZE, self.SIZE)
         self.rect.center = (round(x), round(y))
+
+    def update(self, dt: float) -> None:
+        """Suma el tiempo de vida. Al llegar a PICKUP_LIFETIME se desvanece."""
+        if not self.alive:
+            return
+        self.age += dt
+        if self.age >= PICKUP_LIFETIME:
+            self.alive = False
 
     @property
     def center(self) -> tuple[float, float]:

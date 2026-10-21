@@ -85,6 +85,7 @@ POWERUP_SLOWMO_DURATION = 4.0
 
 # Pickups (recogibles)
 PICKUP_SIZE = 16
+PICKUP_LIFETIME = 10.0  # segundos que un pickup queda en el suelo
 HEALTH_PICKUP_HEAL = 1
 SPEED_PICKUP_BONUS = 50.0
 

@@ -22,8 +22,8 @@ _ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites" / "barr
 class Barrier:
     """Barrera defensiva con HP, barra de vida y colocacion en grid.
 
-    Clase autocontenida: no hereda de ``Entity`` mientras
-    ``entities/entity.py`` no este disponible.
+    Clase autocontenida: no hereda de ``Entity`` aunque
+    ``entities/entity.py`` ya este disponible.
     """
 
     SIZE: int = BARRIER_GRID_SIZE

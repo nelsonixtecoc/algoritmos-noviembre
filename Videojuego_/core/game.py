@@ -11,6 +11,7 @@ from systems.config_manager import load_prefs, set as config_set, get as config_
 from systems.wave_manager import WaveManager
 from entities.weapons import create_weapon
 from entities.projectile import Projectile
+from entities.pickup import HealthPickup, SpeedPickup
 from entities.systems.combat import (
     apply_damage,
     check_projectile_collisions,
@@ -45,6 +46,7 @@ class Game:
         
         # Suscribirse a eventos de oleada completada
         event_bus.subscribe(EventType.WAVE_COMPLETED, self._on_wave_completed)
+        event_bus.subscribe(EventType.ENEMY_DIED, self._on_enemy_died)
         
         self.running = True
         # inicializar el gamestate dentro de Game
@@ -758,6 +760,17 @@ class Game:
         if entity is self.player:
             entity["invuln_timer"] = max(entity.get("invuln_timer", 0), duration)
 
+    def _on_enemy_died(self, data: dict):
+        """Suelta un pickup al azar en la posición del enemigo muerto."""
+        enemy = data.get("enemy") or data.get("entity")
+        if enemy is None or getattr(enemy, "_pickup_dropped", False):
+            return
+        enemy._pickup_dropped = True
+        if random.random() >= PICKUP_DROP_CHANCE:
+            return
+        pickup_class = random.choice((HealthPickup, SpeedPickup))
+        self.powerups.append(pickup_class(enemy.x, enemy.y))
+
     def _on_wave_completed(self, data: dict):
         """Handler para evento WAVE_COMPLETED - añade bono de oro."""
         gold_bonus = data.get("gold_bonus", 0)
@@ -767,12 +780,28 @@ class Game:
         event_bus.publish(EventType.PLAYER_DIED, {})
         self.change_state(GameState.GAME_OVER)
 
+    def update_powerups(self, dt):
+        """Actualiza pickups, recoge los tocados y elimina los agotados."""
+        if not self.player:
+            return
+        player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
+        for powerup in self.powerups[:]:
+            powerup.update(dt)
+            if not powerup.alive:
+                self.powerups.remove(powerup)
+                continue
+            if powerup.collides(player_rect):
+                powerup.apply(self.player)
+                powerup.alive = False
+                self.powerups.remove(powerup)
+
     def update(self, dt):
         self.update_player(dt)
         self.update_projectiles(dt)
         self.update_enemies(dt)
         self.check_projectile_enemy_collisions()
         self.update_barriers(dt)
+        self.update_powerups(dt)
 
         # WaveManager maneja oleadas y spawneo
         self.wave_manager.update(dt)

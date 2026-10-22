@@ -73,6 +73,8 @@ class Game:
         # Screen shake
         self._screen_shake_intensity = 0.0
         self._screen_shake_timer = 0.0
+        # Superficie reutilizable para dibujar la escena y aplicar el temblor
+        self._scene_surface = pygame.Surface((WIDTH, HEIGHT))
         # Name input
         self.name_input = ""
         # fonts / tipografia
@@ -295,7 +297,7 @@ class Game:
         pygame.display.flip()
 
     def draw_playing(self):
-        self.screen.fill(BLACK)
+        self._scene_surface.fill(BLACK)
         
         # Aplicar screen shake
         shake_x = shake_y = 0
@@ -307,37 +309,42 @@ class Game:
         # Proyectiles (usando nuevo sistema Projectile)
         for proj in self.projectiles:
             if isinstance(proj, Projectile):
-                proj.draw(self.screen, (0, 0))  # camera offset = 0 por ahora
+                proj.draw(self._scene_surface, (0, 0))  # camera offset = 0 por ahora
             else:
                 # Compatibilidad con proyectiles viejos (dicts)
-                pygame.draw.circle(self.screen, proj["color"], 
+                pygame.draw.circle(self._scene_surface, proj["color"], 
                                 (int(proj["x"]), int(proj["y"])), proj["radius"])
         
         # Enemigos
         for enemy in self.enemies:
             if not enemy.alive:
                 continue
-            pygame.draw.circle(self.screen, enemy.color, 
+            pygame.draw.circle(self._scene_surface, enemy.color, 
                             (int(enemy.x), int(enemy.y)), enemy.radius)
             # Barra de vida simple
             if enemy.hp < enemy.max_hp:
                 bar_w = 30
                 ratio = enemy.hp / enemy.max_hp
-                pygame.draw.rect(self.screen, (64, 64, 64), 
+                pygame.draw.rect(self._scene_surface, (64, 64, 64), 
                             (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, bar_w, 4))
-                pygame.draw.rect(self.screen, (0, 255, 0), 
+                pygame.draw.rect(self._scene_surface, (0, 255, 0), 
                                (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, int(bar_w * ratio), 4))
         # Barreras
         for barrier in self.barriers:
-            barrier.draw(self.screen)
+            barrier.draw(self._scene_surface)
         # Pickups (solo durante la partida activa, no en pausa)
         if self.state == GameState.PLAYING:
             for powerup in self.powerups:
-                powerup.draw(self.screen)
+                powerup.draw(self._scene_surface)
         # Player (cuadrado rojo)
         if self.player:
             player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
-            pygame.draw.rect(self.screen, RED, player_rect)
+            pygame.draw.rect(self._scene_surface, RED, player_rect)
+
+        # Copiar la escena con el temblor; el HUD se dibuja despues, sin temblar
+        self.screen.fill(BLACK)
+        self.screen.blit(self._scene_surface, (int(shake_x), int(shake_y)))
+        if self.player:
             self.hud.draw(
                 self.screen,
                 self.player,

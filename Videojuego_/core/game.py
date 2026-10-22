@@ -330,6 +330,10 @@ class Game:
         # Barreras
         for barrier in self.barriers:
             barrier.draw(self.screen)
+        # Pickups (solo durante la partida activa, no en pausa)
+        if self.state == GameState.PLAYING:
+            for powerup in self.powerups:
+                powerup.draw(self.screen)
         # Player (cuadrado rojo)
         if self.player:
             player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
@@ -775,6 +779,7 @@ class Game:
         """Handler para evento WAVE_COMPLETED - añade bono de oro."""
         gold_bonus = data.get("gold_bonus", 0)
         self.gold += gold_bonus
+        self._screen_shake(SCREEN_SHAKE_MAX_INTENSITY, 0.4)
 
     def player_died(self):
         event_bus.publish(EventType.PLAYER_DIED, {})

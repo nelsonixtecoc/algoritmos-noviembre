@@ -7,6 +7,7 @@ import pygame
 from config import (
     CYAN,
     HEALTH_PICKUP_HEAL,
+    PICKUP_LIFETIME,
     PICKUP_SIZE,
     RED,
     SPEED_PICKUP_BONUS,
@@ -14,6 +15,19 @@ from config import (
 
 # Ruta a los sprites. pickup.py esta en entities/, entonces parents[1] = Videojuego_
 _ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites"
+
+
+def _get(player, key: str):
+    """Lee player[key] si es dict, o player.key si es objeto."""
+    return player[key] if isinstance(player, dict) else getattr(player, key)
+
+
+def _set(player, key: str, value) -> None:
+    """Escribe player[key] si es dict, o player.key si es objeto."""
+    if isinstance(player, dict):
+        player[key] = value
+    else:
+        setattr(player, key, value)
 
 
 class Pickup:
@@ -31,8 +45,17 @@ class Pickup:
         self.x: float = float(x)
         self.y: float = float(y)
         self.alive: bool = True
+        self.age: float = 0.0  # segundos desde que aparecio
         self.rect = pygame.Rect(0, 0, self.SIZE, self.SIZE)
         self.rect.center = (round(x), round(y))
+
+    def update(self, dt: float) -> None:
+        """Suma el tiempo de vida. Al llegar a PICKUP_LIFETIME se desvanece."""
+        if not self.alive:
+            return
+        self.age += dt
+        if self.age >= PICKUP_LIFETIME:
+            self.alive = False
 
     @property
     def center(self) -> tuple[float, float]:
@@ -74,9 +97,11 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: "Player") -> None:
-        """Suma vida, pero nunca pasa de player.max_hp."""
-        player.hp = min(player.max_hp, player.hp + HEALTH_PICKUP_HEAL)
+    def apply(self, player: "Player | dict") -> None:
+        """Suma vida, pero nunca pasa del max_hp (dict o Player)."""
+        hp = _get(player, "hp")
+        max_hp = _get(player, "max_hp")
+        _set(player, "hp", min(max_hp, hp + HEALTH_PICKUP_HEAL))
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("health", self._SPRITE)
@@ -94,9 +119,9 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: "Player") -> None:
-        """Aumenta la velocidad base del jugador."""
-        player.speed += SPEED_PICKUP_BONUS
+    def apply(self, player: "Player | dict") -> None:
+        """Aumenta la velocidad base (dict o Player)."""
+        _set(player, "speed", _get(player, "speed") + SPEED_PICKUP_BONUS)
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("speed", self._SPRITE)

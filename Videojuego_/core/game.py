@@ -11,6 +11,7 @@ from systems.config_manager import load_prefs, set as config_set, get as config_
 from systems.wave_manager import WaveManager
 from entities.weapons import create_weapon
 from entities.projectile import Projectile
+from entities.pickup import HealthPickup, SpeedPickup
 from entities.systems.combat import (
     apply_damage,
     check_projectile_collisions,
@@ -45,6 +46,7 @@ class Game:
         
         # Suscribirse a eventos de oleada completada
         event_bus.subscribe(EventType.WAVE_COMPLETED, self._on_wave_completed)
+        event_bus.subscribe(EventType.ENEMY_DIED, self._on_enemy_died)
         
         self.running = True
         # inicializar el gamestate dentro de Game
@@ -71,6 +73,8 @@ class Game:
         # Screen shake
         self._screen_shake_intensity = 0.0
         self._screen_shake_timer = 0.0
+        # Superficie reutilizable para dibujar la escena y aplicar el temblor
+        self._scene_surface = pygame.Surface((WIDTH, HEIGHT))
         # Name input
         self.name_input = ""
         # fonts / tipografia
@@ -293,7 +297,7 @@ class Game:
         pygame.display.flip()
 
     def draw_playing(self):
-        self.screen.fill(BLACK)
+        self._scene_surface.fill(BLACK)
         
         # Aplicar screen shake
         shake_x = shake_y = 0
@@ -305,33 +309,42 @@ class Game:
         # Proyectiles (usando nuevo sistema Projectile)
         for proj in self.projectiles:
             if isinstance(proj, Projectile):
-                proj.draw(self.screen, (0, 0))  # camera offset = 0 por ahora
+                proj.draw(self._scene_surface, (0, 0))  # camera offset = 0 por ahora
             else:
                 # Compatibilidad con proyectiles viejos (dicts)
-                pygame.draw.circle(self.screen, proj["color"], 
+                pygame.draw.circle(self._scene_surface, proj["color"], 
                                 (int(proj["x"]), int(proj["y"])), proj["radius"])
         
         # Enemigos
         for enemy in self.enemies:
             if not enemy.alive:
                 continue
-            pygame.draw.circle(self.screen, enemy.color, 
+            pygame.draw.circle(self._scene_surface, enemy.color, 
                             (int(enemy.x), int(enemy.y)), enemy.radius)
             # Barra de vida simple
             if enemy.hp < enemy.max_hp:
                 bar_w = 30
                 ratio = enemy.hp / enemy.max_hp
-                pygame.draw.rect(self.screen, (64, 64, 64), 
+                pygame.draw.rect(self._scene_surface, (64, 64, 64), 
                             (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, bar_w, 4))
-                pygame.draw.rect(self.screen, (0, 255, 0), 
+                pygame.draw.rect(self._scene_surface, (0, 255, 0), 
                                (enemy.x - bar_w//2, enemy.y - enemy.radius - 8, int(bar_w * ratio), 4))
         # Barreras
         for barrier in self.barriers:
-            barrier.draw(self.screen)
+            barrier.draw(self._scene_surface)
+        # Pickups (solo durante la partida activa, no en pausa)
+        if self.state == GameState.PLAYING:
+            for powerup in self.powerups:
+                powerup.draw(self._scene_surface)
         # Player (cuadrado rojo)
         if self.player:
             player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
-            pygame.draw.rect(self.screen, RED, player_rect)
+            pygame.draw.rect(self._scene_surface, RED, player_rect)
+
+        # Copiar la escena con el temblor; el HUD se dibuja despues, sin temblar
+        self.screen.fill(BLACK)
+        self.screen.blit(self._scene_surface, (int(shake_x), int(shake_y)))
+        if self.player:
             self.hud.draw(
                 self.screen,
                 self.player,
@@ -758,14 +771,41 @@ class Game:
         if entity is self.player:
             entity["invuln_timer"] = max(entity.get("invuln_timer", 0), duration)
 
+    def _on_enemy_died(self, data: dict):
+        """Suelta un pickup al azar en la posición del enemigo muerto."""
+        enemy = data.get("enemy") or data.get("entity")
+        if enemy is None or getattr(enemy, "_pickup_dropped", False):
+            return
+        enemy._pickup_dropped = True
+        if random.random() >= PICKUP_DROP_CHANCE:
+            return
+        pickup_class = random.choice((HealthPickup, SpeedPickup))
+        self.powerups.append(pickup_class(enemy.x, enemy.y))
+
     def _on_wave_completed(self, data: dict):
         """Handler para evento WAVE_COMPLETED - añade bono de oro."""
         gold_bonus = data.get("gold_bonus", 0)
         self.gold += gold_bonus
+        self._screen_shake(SCREEN_SHAKE_MAX_INTENSITY, 0.4)
 
     def player_died(self):
         event_bus.publish(EventType.PLAYER_DIED, {})
         self.change_state(GameState.GAME_OVER)
+
+    def update_powerups(self, dt):
+        """Actualiza pickups, recoge los tocados y elimina los agotados."""
+        if not self.player:
+            return
+        player_rect = pygame.Rect(self.player["x"] - 16, self.player["y"] - 16, 32, 32)
+        for powerup in self.powerups[:]:
+            powerup.update(dt)
+            if not powerup.alive:
+                self.powerups.remove(powerup)
+                continue
+            if powerup.collides(player_rect):
+                powerup.apply(self.player)
+                powerup.alive = False
+                self.powerups.remove(powerup)
 
     def update(self, dt):
         self.update_player(dt)
@@ -773,6 +813,7 @@ class Game:
         self.update_enemies(dt)
         self.check_projectile_enemy_collisions()
         self.update_barriers(dt)
+        self.update_powerups(dt)
 
         # WaveManager maneja oleadas y spawneo
         self.wave_manager.update(dt)

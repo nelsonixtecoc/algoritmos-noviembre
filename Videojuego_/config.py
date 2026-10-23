@@ -85,6 +85,8 @@ POWERUP_SLOWMO_DURATION = 4.0
 
 # Pickups (recogibles)
 PICKUP_SIZE = 16
+PICKUP_LIFETIME = 10.0  # segundos que un pickup queda en el suelo
+PICKUP_DROP_CHANCE = 0.2  # probabilidad de que un enemigo suelte un pickup
 HEALTH_PICKUP_HEAL = 1
 SPEED_PICKUP_BONUS = 50.0
 

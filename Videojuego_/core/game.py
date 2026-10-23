@@ -11,7 +11,7 @@ from systems.config_manager import load_prefs, set as config_set, get as config_
 from systems.wave_manager import WaveManager
 from entities.weapons import create_weapon
 from entities.projectile import Projectile
-from entities.pickup import HealthPickup, SpeedPickup
+from entities.pickup import HealthPickup, RepairPickup, SpeedPickup
 from entities.systems.combat import (
     apply_damage,
     check_projectile_collisions,
@@ -779,7 +779,7 @@ class Game:
         enemy._pickup_dropped = True
         if random.random() >= PICKUP_DROP_CHANCE:
             return
-        pickup_class = random.choice((HealthPickup, SpeedPickup))
+        pickup_class = random.choice((HealthPickup, SpeedPickup, RepairPickup))
         self.powerups.append(pickup_class(enemy.x, enemy.y))
 
     def _on_wave_completed(self, data: dict):
@@ -803,7 +803,7 @@ class Game:
                 self.powerups.remove(powerup)
                 continue
             if powerup.collides(player_rect):
-                powerup.apply(self.player)
+                powerup.apply(self.player, self.barriers)
                 powerup.alive = False
                 self.powerups.remove(powerup)
 

@@ -17,7 +17,7 @@ class Rifle(Weapon):
     pellets: int = 1
     pierce: int = WEAPON_RIFLE_PIERCE
     explosion_radius: float = 0.0
-    color: tuple = CYAN
+    color: tuple = RED
     
     # Visual
     muzzle_flash_duration: float = 0.03

@@ -53,7 +53,7 @@ class HUD:
 
         # Ronda actual
         wave_text = self.font.render(
-            f"WAVE {wave_number}/10", True, WHITE
+            f"OLEADA {wave_number}/10", True, WHITE
         )
         screen.blit(wave_text, (WIDTH // 2 - wave_text.get_width() // 2, 12))
 
@@ -77,7 +77,6 @@ class HUD:
             "pistol": ("1", "PISTOLA"),
             "shotgun": ("2", "ESCOPETA"),
             "rifle": ("3", "RIFLE"),
-            "launcher": ("4", "LANZAGRANADAS"),
         }
 
         weapon_key, weapon_name = weapons.get(

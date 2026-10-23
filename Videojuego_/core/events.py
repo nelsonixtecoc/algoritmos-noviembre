@@ -38,7 +38,7 @@ class EventType(Enum):
     VICTORY = "victory"
     STATE_CHANGED = "state_changed"
 
-    #el BUS
+    #el EventBus
 class EventBus:
     def __init__(self): #EL eventType es la lista de funciones que escuchan
         self._listeners: dict[EventType, list[Callable]] = {} #se inicia la lista vacia por cada tipo
@@ -46,7 +46,7 @@ class EventBus:
             self._listeners[event_type] = []
 
     def subscribe(self, event_type: EventType, callback: Callable):
-        """Un modulo dice: 'avísame cuando pase X'"""
+        """Un modulo dice: 'avísame cuando pase X"""
         self._listeners[event_type].append(callback)
     def publish(self, event_type: EventType, data: Any = None):
         """Algo pasa: Pasó X cosa, llama a todos los que escuchan"""

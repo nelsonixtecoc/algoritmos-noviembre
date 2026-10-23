@@ -8,12 +8,13 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-YELLOW = (255, 255, 0)
+BLUE = (0, 0, 155)
+YELLOW = (180, 180, 0)
 GRAY = (128, 128, 128)
 DARK_GRAY = (64, 64, 64)
 ORANGE = (255, 165, 0)
-CYAN = (0, 255, 255)
+CYAN = (0, 155, 155)
+DARK_GREEN = (0, 100, 0)
 
 # Jugador
 PLAYER_SPEED = 300.0

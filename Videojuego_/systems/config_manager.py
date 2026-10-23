@@ -1,6 +1,6 @@
 """Sistema de configuración persistente para el videojuego.
 
-Maneja las preferencias del jugador como volumen y modo de pantalla.
+Maneja las preferencias del modo de pantalla.
 Guarda y carga la configuración en un archivo JSON local.
 
 Asegura que el directorio de datos exista antes de leer/escribir archivos.
@@ -14,7 +14,6 @@ _PREFS_FILE = Path(__file__).resolve().parents[2] / "data" / "prefs.json"
 
 # Valores predeterminados seguros
 DEFAULT_PREFS = {
-    "volume_sfx": 0.8,
     "fullscreen": False,
     "resolution": "640x480",
 }

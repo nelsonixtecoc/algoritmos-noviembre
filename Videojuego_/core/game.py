@@ -41,7 +41,6 @@ class Game:
         
         # Registrar callbacks para efectos visuales
         register_screen_shake(self._screen_shake)
-        register_damage_number(self._show_damage_number)
         register_flash_callback(self._flash_entity)
         
         # Suscribirse a eventos de oleada completada
@@ -68,7 +67,7 @@ class Game:
         self._game_over_triggered = False
         self._victory_triggered = False
         # Tiempo que se muestra el mensaje "Fin de la Oleada" entre oleadas (segundos)
-        self.WAVE_END_DURATION = 3.0
+        self.WAVE_END_DURATION = 2.5
         self._wave_end_timer = 0.0
         # Screen shake
         self._screen_shake_intensity = 0.0
@@ -84,9 +83,6 @@ class Game:
         # spawn_player
         self.spawn_player()
         self.spawn_barriers()
-        # test cuadrado rojo (borrar en la version final)
-        # self.player_rect = pygame.Rect(WIDTH // 2, HEIGHT // 2, 32, 32) # esto es temporal solo para ver un cuadrado rojo
-
         # configurar el fullscreen
         self.keys_pressed = set()
         self.mouse_pressed = False
@@ -102,12 +98,6 @@ class Game:
             "cooldown": 0.0,
             "invuln_timer": 0.0,
             "speed": PLAYER_SPEED,
-            # Upgrade multipliers
-            "damage_mult": 1.0,
-            "cooldown_mult": 1.0,
-            "spread_mult": 1.0,
-            "speed_mult": 1.0,
-            "pierce_bonus": 0,
         }
 
     def spawn_barriers(self):
@@ -217,8 +207,6 @@ class Game:
                 if event.button == 1:
                     if hasattr(self, 'button_jugar_rect') and self.button_jugar_rect.collidepoint(event.pos):
                         self.change_state(GameState.PLAYING)
-                    elif hasattr(self, 'button_config_rect') and self.button_config_rect.collidepoint(event.pos):
-                        self.change_state(GameState.CONFIG)
                     elif hasattr(self, 'button_records_rect') and self.button_records_rect.collidepoint(event.pos):
                         self.change_state(GameState.HIGHSCORES)
                     elif hasattr(self, 'button_salir_rect') and self.button_salir_rect.collidepoint(event.pos):
@@ -274,11 +262,11 @@ class Game:
                         self.name_input += event.unicode.upper()
 
     def draw_menu(self):
-        self.screen.fill(BLACK)
+        self.screen.fill(DARK_GREEN)
         title = self.big_font.render("Defiende la Base", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
-        options = ["JUGAR", "CONFIGURACIÓN", "RÉCORDS", "SALIR"]
+        options = ["JUGAR", "RÉCORDS", "SALIR"]
         for i, opt in enumerate(options):
             color = YELLOW if i == 0 else WHITE
             text = self.font.render(opt, True, color)
@@ -288,8 +276,6 @@ class Game:
             if i == 0:
                 self.button_jugar_rect = rect.inflate(40, 20)
             elif i == 1:
-                self.button_config_rect = rect.inflate(40, 20)
-            elif i == 2:
                 self.button_records_rect = rect.inflate(40, 20)
             else:
                 self.button_salir_rect = rect.inflate(40, 20)
@@ -297,7 +283,7 @@ class Game:
         pygame.display.flip()
 
     def draw_playing(self):
-        self._scene_surface.fill(BLACK)
+        self._scene_surface.fill(BLUE)
         
         # Aplicar screen shake
         shake_x = shake_y = 0
@@ -370,7 +356,7 @@ class Game:
 
     def draw_config(self):
         """Dibuja la pantalla de configuración."""
-        self.screen.fill(BLACK)
+        self.screen.fill(YELLOW)
 
         title_text = self.big_font.render("CONFIGURACIÓN", True, YELLOW)
         title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 4))
@@ -415,9 +401,9 @@ class Game:
 
     def draw_highscore_screen(self):
         """Dibuja la pantalla de mejores puntuaciones."""
-        self.screen.fill(BLACK)
+        self.screen.fill(CYAN)
 
-        title_text = self.big_font.render("MEJORES PUNTUACIONES", True, YELLOW)
+        title_text = self.big_font.render("LOS MAS DUROS", True, YELLOW)
         title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 4))
         self.screen.blit(title_text, title_rect)
 
@@ -430,7 +416,7 @@ class Game:
                 entry_rect = entry_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * 40))
                 self.screen.blit(entry_text, entry_rect)
         else:
-            no_text = self.font.render("Aún no hay récords", True, DARK_GRAY)
+            no_text = self.font.render("¿Nadie lo ha intentado aún?", True, DARK_GRAY)
             no_rect = no_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             self.screen.blit(no_text, no_rect)
 
@@ -495,12 +481,6 @@ class Game:
         # Reset weapon to pistol
         self.current_weapon = self.weapons["pistol"]
         self.player["weapon"] = "pistol"
-        # Reset upgrade multipliers
-        self.player["damage_mult"] = 1.0
-        self.player["cooldown_mult"] = 1.0
-        self.player["spread_mult"] = 1.0
-        self.player["speed_mult"] = 1.0
-        self.player["pierce_bonus"] = 0
 
     def get_weapon_stats(self, weapon):
         stats = {
@@ -532,7 +512,7 @@ class Game:
                 "pellets": 1,
                 "pierce": WEAPON_RIFLE_PIERCE,
                 "explosion_radius": 0,
-                "color": CYAN
+                "color": RED
             }
         }
         return stats.get(weapon, stats["pistol"])
@@ -709,7 +689,6 @@ class Game:
 
     def check_projectile_enemy_collisions(self):
         """Usa el nuevo sistema de combate para colisiones proyectil-enemigo."""
-        # Obtener solo proyectiles Projectile (no dicts viejos)
         proj_list = [p for p in self.projectiles if isinstance(p, Projectile)]
         if not proj_list or not self.enemies:
             return
@@ -753,17 +732,12 @@ class Game:
         if died:
             self.player_died()
 
-    # ===== Callbacks para efectos visuales (registrados en __init__) =====
+    #Callbacks para efectos visuales (registrados en __init__)
     
     def _screen_shake(self, intensity: float, duration: float):
         """Callback para screen shake."""
         self._screen_shake_intensity = intensity
         self._screen_shake_timer = duration
-
-    def _show_damage_number(self, x: float, y: float, amount: int, color: tuple):
-        """Callback para mostrar número de daño flotante."""
-        # Por ahora solo log, se puede conectar a HUD cuando esté listo
-        pass  # TODO: Conectar a HUD damage numbers
 
     def _flash_entity(self, entity: dict, duration: float):
         """Callback para flash visual al recibir daño."""
@@ -820,10 +794,10 @@ class Game:
 
     def draw_name_entry(self):
         """Dibuja la pantalla para ingresar el nombre del highscore."""
-        self.screen.fill(BLACK)
+        self.screen.fill()
 
         # Título
-        title = self.big_font.render("¡NUEVO RÉCORD!", True, YELLOW)
+        title = self.big_font.render("ENTRAS EN EL TOP", True, YELLOW)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 4))
         self.screen.blit(title, title_rect)
 
@@ -863,22 +837,18 @@ class Game:
                 self.screen.blit(cursor_surf, cursor_rect)
 
         # Instrucciones
-        instr1 = self.font.render("A-Z: escribir  |  BACKSPACE: borrar", True, GRAY)
+        instr1 = self.font.render("A-Z: escribir  |  BORRAR: borrar", True, GRAY)
         instr1_rect = instr1.get_rect(center=(WIDTH // 2, HEIGHT - 80))
         self.screen.blit(instr1, instr1_rect)
 
-        instr2 = self.font.render("ENTER: confirmar (3 letras)", True, GRAY)
+        instr2 = self.font.render("ENTER para confirmar", True, GRAY)
         instr2_rect = instr2.get_rect(center=(WIDTH // 2, HEIGHT - 50))
         self.screen.blit(instr2, instr2_rect)
 
         pygame.display.flip()
 
     def handle_events_wave_end(self):
-        """Maneja eventos durante el mensaje 'Fin de la Oleada'.
-
-        No hay input de compra (tienda removida); el estado avanza solo
-        pasados los 3 segundos para evitar bugs entre oleadas.
-        """
+        """Maneja eventos durante el mensaje 'Fin de la Oleada'."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -894,11 +864,11 @@ class Game:
         """Dibuja el mensaje 'Fin de la Oleada' entre oleadas."""
         self.screen.fill(BLACK)
 
-        title_text = self.big_font.render("FIN DE LA OLEADA", True, YELLOW)
+        title_text = self.big_font.render("BIEN HECHO, FIN DE LA OLEADA", True, YELLOW)
         title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         self.screen.blit(title_text, title_rect)
 
-        instr = self.font.render("PREPARATE PARA LA SIGUIENTE...", True, WHITE)
+        instr = self.font.render("VIENE LA SIGUIENTE...", True, WHITE)
         instr_rect = instr.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 60))
         self.screen.blit(instr, instr_rect)
 

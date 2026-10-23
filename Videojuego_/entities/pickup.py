@@ -6,10 +6,12 @@ import pygame
 
 from config import (
     CYAN,
+    GREEN,
     HEALTH_PICKUP_HEAL,
     PICKUP_LIFETIME,
     PICKUP_SIZE,
     RED,
+    REPAIR_PICKUP_AMOUNT,
     SPEED_PICKUP_BONUS,
 )
 
@@ -66,9 +68,10 @@ class Pickup:
         """Devuelve True si el pickup toca el rect del jugador."""
         return self.rect.colliderect(player_rect)
 
-    def apply(self, player: dict) -> None:
+    def apply(self, player: dict, barriers=None) -> None:
         """Aplica el efecto al diccionario del jugador (game.player).
 
+        ``barriers`` es opcional y solo lo usa ``RepairPickup``.
         Las hijas sobreescriben este metodo.
         """
         raise NotImplementedError
@@ -97,7 +100,7 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: "Player | dict") -> None:
+    def apply(self, player: "Player | dict", barriers=None) -> None:
         """Suma vida, pero nunca pasa del max_hp (dict o Player)."""
         hp = _get(player, "hp")
         max_hp = _get(player, "max_hp")
@@ -119,7 +122,7 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: "Player | dict") -> None:
+    def apply(self, player: "Player | dict", barriers=None) -> None:
         """Aumenta la velocidad base (dict o Player)."""
         _set(player, "speed", _get(player, "speed") + SPEED_PICKUP_BONUS)
 
@@ -129,4 +132,33 @@ class SpeedPickup(Pickup):
             surface.blit(sprite, self.rect)
             return
         # Sin sprite disponible: rectangulo cian de respaldo.
+        pygame.draw.rect(surface, self._FALLBACK_COLOR, self.rect)
+
+
+class RepairPickup(Pickup):
+    """Herramienta que repara la barrera viva con menos vida."""
+
+    # No existe sprite de reparacion todavia -> se usa rectangulo de color.
+    _SPRITE = _ASSETS_DIR / "pickups" / "repair.png"
+    _FALLBACK_COLOR = GREEN
+
+    def apply(self, player, barriers=None) -> None:
+        """Repara la barrera viva con menor proporcion de vida."""
+        if not barriers:
+            return
+        target = None
+        for barrier in barriers:
+            if not barrier.alive or barrier.hp >= barrier.max_hp:
+                continue
+            if target is None or barrier.hp / barrier.max_hp < target.hp / target.max_hp:
+                target = barrier
+        if target is not None:
+            target.repair(REPAIR_PICKUP_AMOUNT)
+
+    def draw(self, surface: pygame.Surface) -> None:
+        sprite = self._load_sprite("repair", self._SPRITE)
+        if sprite is not None:
+            surface.blit(sprite, self.rect)
+            return
+        # Sin sprite disponible: rectangulo verde de respaldo.
         pygame.draw.rect(surface, self._FALLBACK_COLOR, self.rect)

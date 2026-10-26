@@ -262,8 +262,8 @@ class Game:
                         self.name_input += event.unicode.upper()
 
     def draw_menu(self):
-        self.screen.fill(DARK_GREEN)
-        title = self.big_font.render("Defiende la Base", True, WHITE)
+        self.screen.fill(BLUE)
+        title = self.big_font.render("LAWANDON", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
         options = ["JUGAR", "RÉCORDS", "SALIR"]
@@ -283,7 +283,7 @@ class Game:
         pygame.display.flip()
 
     def draw_playing(self):
-        self._scene_surface.fill(BLUE)
+        self._scene_surface.fill(DARK_GREEN)
         
         # Aplicar screen shake
         shake_x = shake_y = 0

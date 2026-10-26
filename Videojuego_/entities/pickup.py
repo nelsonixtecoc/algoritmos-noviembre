@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
 
 import pygame
-
 from config import (
     CYAN,
     GREEN,
@@ -15,6 +15,9 @@ from config import (
     SPEED_PICKUP_BONUS,
     SPEED_PICKUP_MAX_SPEED,
 )
+
+if TYPE_CHECKING:
+    from entities.player import Player
 
 # Ruta a los sprites. pickup.py esta en entities/, entonces parents[1] = Videojuego_
 _ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites"
@@ -42,7 +45,7 @@ class Pickup:
 
     SIZE: int = PICKUP_SIZE
     # Cache de sprites compartida por todas las hijas (evita recargar de disco).
-    _SPRITE_CACHE: dict[str, pygame.Surface] = {}
+    _SPRITE_CACHE: ClassVar[dict[str, pygame.Surface]] = {}
 
     def __init__(self, x: float, y: float) -> None:
         self.x: float = float(x)
@@ -101,13 +104,14 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: "Player | dict", barriers=None) -> None:
+    def apply(self, player: Player | dict, barriers=None) -> None:
         """Suma vida, pero nunca pasa del max_hp (dict o Player)."""
         hp = _get(player, "hp")
         max_hp = _get(player, "max_hp")
         _set(player, "hp", min(max_hp, hp + HEALTH_PICKUP_HEAL))
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja el corazon, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("health", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)
@@ -123,7 +127,7 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: "Player | dict", barriers=None) -> None:
+    def apply(self, player: Player | dict, barriers=None) -> None:
         """Aumenta la velocidad sin superar SPEED_PICKUP_MAX_SPEED.
 
         Si la velocidad actual ya alcanzó el tope, no se modifica.
@@ -134,6 +138,7 @@ class SpeedPickup(Pickup):
         _set(player, "speed", min(current + SPEED_PICKUP_BONUS, SPEED_PICKUP_MAX_SPEED))
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja el rayo, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("speed", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)
@@ -163,6 +168,7 @@ class RepairPickup(Pickup):
             target.repair(REPAIR_PICKUP_AMOUNT)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja la herramienta, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("repair", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)

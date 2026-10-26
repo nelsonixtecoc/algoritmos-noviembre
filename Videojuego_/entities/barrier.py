@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from pathlib import Path
 
 import pygame
@@ -56,26 +55,6 @@ class Barrier:
         gx = round(pos[0] / cls.SIZE) * cls.SIZE
         gy = round(pos[1] / cls.SIZE) * cls.SIZE
         return (int(gx), int(gy))
-
-    @classmethod
-    def can_place(
-        cls,
-        pos: tuple[float, float],
-        barriers: Sequence[Barrier] | None = None,
-        margin: int = 0,
-    ) -> tuple[int, int] | None:
-        """Devuelve la posicion alineada al grid si es valida, o ``None``."""
-        snapped = cls.snap_to_grid(pos)
-        probe = pygame.Rect(0, 0, cls.SIZE + margin * 2, cls.SIZE + margin * 2)
-        probe.center = snapped
-        if probe.left < 0 or probe.top < 0:
-            return None
-        if probe.right > WIDTH or probe.bottom > HEIGHT:
-            return None
-        for barrier in barriers or ():
-            if barrier.alive and probe.colliderect(barrier.rect):
-                return None
-        return snapped
 
     def take_damage(self, amount: int) -> bool:
         """Reduce HP. Devuelve ``True`` si la barrera fue destruida."""

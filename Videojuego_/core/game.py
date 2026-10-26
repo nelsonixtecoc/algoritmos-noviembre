@@ -794,7 +794,7 @@ class Game:
 
     def draw_name_entry(self):
         """Dibuja la pantalla para ingresar el nombre del highscore."""
-        self.screen.fill()
+        self.screen.fill(BLACK)
 
         # Título
         title = self.big_font.render("ENTRAS EN EL TOP", True, YELLOW)

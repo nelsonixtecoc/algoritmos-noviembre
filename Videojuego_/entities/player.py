@@ -21,7 +21,7 @@ class Player(Entity): #Hereda todo lo de la plantilla base (Entity)
         self._setup_animations()
 
     def _setup_animations(self):
-        # Crea una cajita azul de prueba mientras no tengamos dibujos reales
+        #Creamos una cajita azul de prueba mientras no tengamos dibujos reales
         base_surface = pygame.Surface((32,32))
         base_surface.fill(self.WEAPON_COLORS[self.weapon_index])
         self.animator.add_animation('idle', [base_surface])

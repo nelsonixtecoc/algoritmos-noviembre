@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
 import pygame
-
 from config import (
     BARRIER_GRID_SIZE,
     BARRIER_MAX_HP,
@@ -26,7 +26,7 @@ class Barrier:
     """
 
     SIZE: int = BARRIER_GRID_SIZE
-    _SPRITE_CACHE: dict[str, pygame.Surface] = {}
+    _SPRITE_CACHE: ClassVar[dict[str, pygame.Surface]] = {}
 
     def __init__(self, x: float, y: float) -> None:
         snapped_x, snapped_y = self.snap_to_grid((x, y))

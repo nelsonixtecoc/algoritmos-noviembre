@@ -106,7 +106,15 @@
 - [ ] Screen shake en: player hit, wave complete
 
 **Semana 4:**
-- [ ] Testing visual: claridad feedback (barreras y pickups)
+- [x] Testing visual: claridad feedback (barreras y pickups)
+
+  **Notas de prueba (2026-10-26, resolución 640×480):**
+
+  - Los pickups de vida (verde) y velocidad (rojo) aparecen al morir enemigos.
+  - Se recogen al tocarlos y aplican su efecto.
+  - Desaparecen solos a los 10 segundos.
+  - El screen shake se ve al completar una oleada y al recibir daño.
+  - Pendiente: sprites finales de speed.png y repair.png (hoy son rectángulos).
 
 ---
 

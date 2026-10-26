@@ -111,6 +111,7 @@ class HealthPickup(Pickup):
         _set(player, "hp", min(max_hp, hp + HEALTH_PICKUP_HEAL))
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja el corazon, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("health", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)
@@ -137,6 +138,7 @@ class SpeedPickup(Pickup):
         _set(player, "speed", min(current + SPEED_PICKUP_BONUS, SPEED_PICKUP_MAX_SPEED))
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja el rayo, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("speed", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)
@@ -166,6 +168,7 @@ class RepairPickup(Pickup):
             target.repair(REPAIR_PICKUP_AMOUNT)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Dibuja la herramienta, con un rectangulo de respaldo si falta el sprite."""
         sprite = self._load_sprite("repair", self._SPRITE)
         if sprite is not None:
             surface.blit(sprite, self.rect)

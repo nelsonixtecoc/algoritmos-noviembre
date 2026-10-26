@@ -47,6 +47,7 @@ class Barrier:
 
     @property
     def center(self) -> tuple[float, float]:
+        """Centro de la barrera en coordenadas del mundo."""
         return (self.x, self.y)
 
     @classmethod

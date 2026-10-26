@@ -93,17 +93,17 @@
 ### 🧱 Integrante 4 - Zebedeo (Barriers & Pickups)
 
 **Semana 1:**
-- [ ] `entities/barrier.py` - Sprite con HP (max 200), rect, draw_health_bar(), take_damage() — **solo 4 posiciones fijas** (usa `default_positions()`)
-- [ ] Enemigos priorizan barreras si en rango → atacan → si destruida, van a player/base
-- [ ] `entities/pickup.py` - Clase base `Pickup` (pos, rect, collides, apply, draw), `HealthPickup` (cura hasta max_hp) y `SpeedPickup` (sube velocidad) — **ya iniciado**
+- [x] `entities/barrier.py` - Sprite con HP (max 200), rect, draw_health_bar(), take_damage() — **solo 4 posiciones fijas** (usa `default_positions()`)
+- [x] Enemigos priorizan barreras si en rango → atacan → si destruida, van a player/base
+- [x] `entities/pickup.py` - Clase base `Pickup` (pos, rect, collides, apply, draw), `HealthPickup` (cura hasta max_hp) y `SpeedPickup` (sube velocidad) — **ya iniciado**
 
 **Semana 2:**
-- [ ] Spawneo de pickups al matar enemigos (integrar con WaveManager / EventBus ENEMY_DIED)
-- [ ] Colisión player ↔ pickup y aplicación de efectos en game loop
-- [ ] Tiempo de vida / auto-desaparición de pickups no recogidos
+- [x] Spawneo de pickups al matar enemigos (integrar con WaveManager / EventBus ENEMY_DIED)
+- [x] Colisión player ↔ pickup y aplicación de efectos en game loop
+- [x] Tiempo de vida / auto-desaparición de pickups no recogidos
 
 **Semana 3:**
-- [ ] Screen shake en: player hit, wave complete
+- [x] Screen shake en: player hit, wave complete
 
 **Semana 4:**
 - [x] Testing visual: claridad feedback (barreras y pickups)

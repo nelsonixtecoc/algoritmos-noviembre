@@ -13,6 +13,7 @@ from config import (
     RED,
     REPAIR_PICKUP_AMOUNT,
     SPEED_PICKUP_BONUS,
+    SPEED_PICKUP_MAX_SPEED,
 )
 
 # Ruta a los sprites. pickup.py esta en entities/, entonces parents[1] = Videojuego_
@@ -123,8 +124,14 @@ class SpeedPickup(Pickup):
     _FALLBACK_COLOR = CYAN
 
     def apply(self, player: "Player | dict", barriers=None) -> None:
-        """Aumenta la velocidad base (dict o Player)."""
-        _set(player, "speed", _get(player, "speed") + SPEED_PICKUP_BONUS)
+        """Aumenta la velocidad sin superar SPEED_PICKUP_MAX_SPEED.
+
+        Si la velocidad actual ya alcanzó el tope, no se modifica.
+        """
+        current = _get(player, "speed")
+        if current >= SPEED_PICKUP_MAX_SPEED:
+            return
+        _set(player, "speed", min(current + SPEED_PICKUP_BONUS, SPEED_PICKUP_MAX_SPEED))
 
     def draw(self, surface: pygame.Surface) -> None:
         sprite = self._load_sprite("speed", self._SPRITE)

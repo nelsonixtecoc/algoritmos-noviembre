@@ -12,12 +12,10 @@ from pathlib import Path
 _HIGHSCORES_FILE = Path(__file__).resolve().parents[2] / "data" / "highscores.json"
 _MAX_SCORES = 5
 
-
 def _ensure_data_dir() -> None:
     """Crear el directorio data si no existe."""
     data_dir = _HIGHSCORES_FILE.parent
     data_dir.mkdir(parents=True, exist_ok=True)
-
 
 def _load_highscores() -> list[dict]:
     """Cargar highscores desde el archivo, o retornar lista vacía."""
@@ -40,7 +38,6 @@ def _load_highscores() -> list[dict]:
         pass
     return []
 
-
 def _save_highscores(scores: list[dict]) -> bool:
     """Guardar highscores en el archivo."""
     _ensure_data_dir()
@@ -52,7 +49,6 @@ def _save_highscores(scores: list[dict]) -> bool:
         print(f"No se pudieron guardar los highscores: {e}")
         return False
 
-
 def get_highscores() -> list[dict]:
     """Obtener la lista de highscores (ordenada de mayor a menor)."""
     scores = _load_highscores()
@@ -60,7 +56,6 @@ def get_highscores() -> list[dict]:
     scores.sort(key=lambda x: x["score"], reverse=True)
     # Limitar a máximo 5
     return scores[:_MAX_SCORES]
-
 
 def add_highscore(name: str, score: int) -> list[dict]:
     """Añadir una nueva puntuación y devolver la lista actualizada."""
@@ -75,7 +70,6 @@ def add_highscore(name: str, score: int) -> list[dict]:
     if _save_highscores(scores):
         return scores
     return get_highscores()  # Return current even if save failed
-
 
 def is_new_highscore(score: int) -> bool:
     """Verificar si una puntuación entra en el top 5."""

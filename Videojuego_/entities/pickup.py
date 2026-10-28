@@ -16,9 +16,6 @@ from config import (
     SPEED_PICKUP_MAX_SPEED,
 )
 
-if TYPE_CHECKING:
-    from entities.player import Player
-
 # Ruta a los sprites. pickup.py esta en entities/, entonces parents[1] = Videojuego_
 _ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets" / "sprites"
 
@@ -104,8 +101,8 @@ class HealthPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "heart_full.png"
     _FALLBACK_COLOR = RED
 
-    def apply(self, player: Player | dict, barriers=None) -> None:
-        """Suma vida, pero nunca pasa del max_hp (dict o Player)."""
+    def apply(self, player: dict, barriers=None) -> None:
+        """Suma vida, pero nunca pasa del max_hp."""
         hp = _get(player, "hp")
         max_hp = _get(player, "max_hp")
         _set(player, "hp", min(max_hp, hp + HEALTH_PICKUP_HEAL))
@@ -127,7 +124,7 @@ class SpeedPickup(Pickup):
     _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
     _FALLBACK_COLOR = CYAN
 
-    def apply(self, player: Player | dict, barriers=None) -> None:
+    def apply(self, player: dict, barriers=None) -> None:
         """Aumenta la velocidad sin superar SPEED_PICKUP_MAX_SPEED.
 
         Si la velocidad actual ya alcanzó el tope, no se modifica.

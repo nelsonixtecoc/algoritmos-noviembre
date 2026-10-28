@@ -201,28 +201,3 @@ class Projectile:
         cls._sprite_cache.clear()
 
 
-# Factory functions para crear proyectiles estándar
-def create_bullet(x: float, y: float, angle: float, speed: float, damage: int, 
-                color: Tuple[int, int, int] = YELLOW, pierce: int = 0) -> Projectile:
-    """Crea una bala estándar (pistola/rifle)."""
-    vx = math.cos(angle) * speed
-    vy = math.sin(angle) * speed
-    return Projectile(x, y, vx, vy, damage, pierce=pierce, color=color, 
-                    sprite_name="bullet.png", radius=4)
-
-def create_pellet(x: float, y: float, angle: float, speed: float, damage: int,
-                color: Tuple[int, int, int] = ORANGE) -> Projectile:
-    """Crea un perdigón de escopeta."""
-    vx = math.cos(angle) * speed
-    vy = math.sin(angle) * speed
-    return Projectile(x, y, vx, vy, damage, pierce=0, color=color,
-                    sprite_name="pellet.png", radius=3)
-
-def create_rocket(x: float, y: float, angle: float, speed: float, damage: int,
-                explosion_radius: float = 60.0) -> Projectile:
-    """Crea un cohete explosivo."""
-    vx = math.cos(angle) * speed
-    vy = math.sin(angle) * speed
-    return Projectile(x, y, vx, vy, damage, pierce=0, 
-                    explosion_radius=explosion_radius, color=RED,
-                    sprite_name="rocket.png", radius=8)

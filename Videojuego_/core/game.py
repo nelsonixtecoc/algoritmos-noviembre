@@ -7,7 +7,7 @@ from config import *
 from core.events import EventType, event_bus, GameState
 from ui.hud import HUD
 from systems.highscore import add_highscore, is_new_highscore, get_highscores
-from systems.config_manager import load_prefs, set as config_set, get as config_get, toggle_fullscreen, DEFAULT_PREFS, save_prefs
+from systems.config_manager import load_prefs, toggle_fullscreen, save_prefs
 from systems.wave_manager import WaveManager
 from entities.weapons import create_weapon
 from entities.projectile import Projectile
@@ -17,7 +17,6 @@ from entities.systems.combat import (
     check_projectile_collisions,
     check_player_enemy_collision,
     register_screen_shake,
-    register_damage_number,
     register_flash_callback,
 )
 

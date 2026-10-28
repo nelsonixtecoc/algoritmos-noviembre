@@ -7,7 +7,7 @@ from config import ENEMY_SPEEDY_HP, ENEMY_SPEEDY_SPEED, ENEMY_SPEEDY_DAMAGE, ENE
 class Speedy(Enemy):
     """Enemigo rápido y frágil."""
 
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float):
         super().__init__(
             x=x, y=y,
             hp=ENEMY_SPEEDY_HP,

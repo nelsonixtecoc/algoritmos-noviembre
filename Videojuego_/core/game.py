@@ -16,7 +16,6 @@ from entities.systems.combat import (
     apply_damage,
     check_projectile_collisions,
     check_player_enemy_collision,
-    check_enemy_barrier_collision,
     register_screen_shake,
     register_damage_number,
     register_flash_callback,
@@ -118,8 +117,6 @@ class Game:
                 self.handle_events_playing()
             elif self.state == GameState.PAUSED:
                 self.handle_events_paused()
-            elif self.state == GameState.CONFIG:
-                self.handle_events_config()
             elif self.state == GameState.HIGHSCORES:
                 self.handle_events_highscore()
             elif self.state == GameState.WAVE_END:
@@ -262,13 +259,13 @@ class Game:
                         self.name_input += event.unicode.upper()
 
     def draw_menu(self):
-        self.screen.fill(BLUE)
+        self.screen.fill(ORANGE)   #funcion contenida dentro de la clase Game
         title = self.big_font.render("LAWANDON", True, WHITE)
         title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title, title_rect)
         options = ["JUGAR", "RÉCORDS", "SALIR"]
         for i, opt in enumerate(options):
-            color = YELLOW if i == 0 else WHITE
+            color = BLACK if i == 0 else WHITE
             text = self.font.render(opt, True, color)
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * 40))
             self.screen.blit(text, rect)
@@ -292,7 +289,7 @@ class Game:
             shake_x = random.uniform(-self._screen_shake_intensity, self._screen_shake_intensity)
             shake_y = random.uniform(-self._screen_shake_intensity, self._screen_shake_intensity)
         
-        # Proyectiles (usando nuevo sistema Projectile)
+        # Proyectiles
         for proj in self.projectiles:
             if isinstance(proj, Projectile):
                 proj.draw(self._scene_surface, (0, 0))  # camera offset = 0 por ahora
@@ -341,7 +338,6 @@ class Game:
         pygame.display.flip()
 
     def draw_paused(self):
-        self.draw_playing()
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(180)
@@ -352,35 +348,6 @@ class Game:
         sub = self.font.render("ESC para continuar", True, GRAY)
         sub_rect = sub.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
         self.screen.blit(sub, sub_rect)
-        pygame.display.flip()
-
-    def draw_config(self):
-        """Dibuja la pantalla de configuración."""
-        self.screen.fill(YELLOW)
-
-        title_text = self.big_font.render("CONFIGURACIÓN", True, YELLOW)
-        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 4))
-        self.screen.blit(title_text, title_rect)
-
-        # Modo pantalla completa
-        fullscreen = self.config.get("fullscreen", False)
-        fullscreen_text = self.font.render(
-            f"Pantalla completa: {'Sí' if fullscreen else 'No'}", True, WHITE
-        )
-        fullscreen_rect = fullscreen_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-        self.screen.blit(fullscreen_text, fullscreen_rect)
-
-        # Botón para alternar pantalla completa
-        toggle_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 40)
-        pygame.draw.rect(self.screen, DARK_GRAY, toggle_rect)
-        toggle_text = self.font.render("Alternar pantalla completa", True, WHITE)
-        self.screen.blit(toggle_text, (WIDTH // 2 - 95, HEIGHT // 2 + 102))
-
-        # Instrucciones
-        instr = self.font.render("PRECIONA ESC PARA VOLVER AL MENÚ", True, DARK_GRAY)
-        instr_rect = instr.get_rect(center=(WIDTH // 2, HEIGHT - 50))
-        self.screen.blit(instr, instr_rect)
-
         pygame.display.flip()
 
     def handle_events_config(self):
@@ -401,9 +368,9 @@ class Game:
 
     def draw_highscore_screen(self):
         """Dibuja la pantalla de mejores puntuaciones."""
-        self.screen.fill(CYAN)
+        self.screen.fill(ORANGE)
 
-        title_text = self.big_font.render("LOS MAS DUROS", True, YELLOW)
+        title_text = self.big_font.render("EL TOP 5", True, BLACK)
         title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 4))
         self.screen.blit(title_text, title_rect)
 
@@ -413,7 +380,7 @@ class Game:
                 entry_text = self.font.render(
                     f"{i+1}. {entry['name']}: {entry['score']}", True, WHITE
                 )
-                entry_rect = entry_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * 40))
+                entry_rect = entry_text.get_rect(center=(WIDTH // 2, HEIGHT // 3 + i * 40))
                 self.screen.blit(entry_text, entry_rect)
         else:
             no_text = self.font.render("¿Nadie lo ha intentado aún?", True, DARK_GRAY)
@@ -520,6 +487,7 @@ class Game:
     def fire_weapon(self, angle):
         """Dispara el arma actual usando el sistema Strategy Pattern."""
         weapon = self.current_weapon
+        p = self.player
         if weapon.can_fire(pygame.time.get_ticks() / 1000.0):
             projectiles = weapon.fire(
                 x=self.player["x"],
@@ -534,6 +502,7 @@ class Game:
             self.projectiles.extend(projectiles)
             weapon.reset_cooldown(pygame.time.get_ticks() / 1000.0)
             weapon.trigger_muzzle_flash()
+            p["cooldown"] = weapon.cooldown * p.get("cooldown_mult", 1.0)
             # Screen shake por disparo
             self._screen_shake(weapon.screen_shake_intensity, 0.05)
 
@@ -587,6 +556,12 @@ class Game:
         # timers
         if p["invuln_timer"] > 0:
             p["invuln_timer"] -= dt
+            
+        #timer cooldown
+        if p["cooldown"] > 0:
+            p["cooldown"] -= dt 
+            if p["cooldown"] < 0:
+                p["cooldown"] = 0
         
         # Screen shake timer
         if self._screen_shake_timer > 0:
@@ -659,7 +634,7 @@ class Game:
                             event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
                         break  # Una barrera por frame
 
-            # Colisión con player (daño) - usar sistema de combate
+            # Colisión con player (daño) usa sistema de combate
             player_enemy_collisions = check_player_enemy_collision(self.player, [enemy])
             if player_enemy_collisions:
                 died = apply_damage(
@@ -685,7 +660,6 @@ class Game:
         for barrier in self.barriers[:]:
             if not barrier.alive:
                 self.barriers.remove(barrier)
-                event_bus.publish(EventType.BARRIER_DESTROYED, {"barrier": barrier})
 
     def check_projectile_enemy_collisions(self):
         """Usa el nuevo sistema de combate para colisiones proyectil-enemigo."""
@@ -794,7 +768,7 @@ class Game:
 
     def draw_name_entry(self):
         """Dibuja la pantalla para ingresar el nombre del highscore."""
-        self.screen.fill(BLACK)
+        self.screen.fill(RED)
 
         # Título
         title = self.big_font.render("ENTRAS EN EL TOP", True, YELLOW)
@@ -876,10 +850,10 @@ class Game:
 
     def draw_game_over(self):
         """Dibuja la pantalla de game over / victoria."""
-        self.screen.fill(BLACK)
+        self.screen.fill(RED)
 
         if self._victory_triggered:
-            text = self.big_font.render("¡VICTORIA!", True, GREEN)
+            text = self.big_font.render("¡VICTORIA!", True, WHITE)
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
             self.screen.blit(text, rect)
 
@@ -887,7 +861,7 @@ class Game:
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             self.screen.blit(text, rect)
         else:
-            text = self.big_font.render("FIN DEL JUEGO", True, RED)
+            text = self.big_font.render("FIN DEL JUEGO", True, BLACK)
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
             self.screen.blit(text, rect)
 

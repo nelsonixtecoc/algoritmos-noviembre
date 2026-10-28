@@ -8,7 +8,7 @@ class Enemy:
 
     def __init__(self, x: float, y: float, hp: int, speed: float,
                 damage: int, gold: int, color: tuple, radius: int,
-                enemy_type: str = "enemy") -> None:
+                enemy_type: str = "enemy"):
         self.x = x
         self.y = y
         self.hp = hp
@@ -25,7 +25,7 @@ class Enemy:
         self.rect = pygame.Rect(0, 0, radius * 2, radius * 2)
         self.rect.center = (round(x), round(y))
 
-    def update(self, dt: float, player_x: float, player_y: float) -> None:
+    def update(self, dt: float, player_x: float, player_y: float):
         """Mueve al enemigo hacia el player."""
         if not self.alive:
             return
@@ -51,7 +51,7 @@ class Enemy:
             return True
         return False
 
-    def draw(self, surface: pygame.Surface) -> None:
+    def draw(self, surface: pygame.Surface):
         """Dibuja el enemigo como un círculo de color."""
         if not self.alive:
             return

@@ -9,7 +9,7 @@ from core.game import Game
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Zombies")
+    pygame.display.set_caption("Proyecto")
     game = Game(screen)
     game.run()
     pygame.quit()
@@ -18,3 +18,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+

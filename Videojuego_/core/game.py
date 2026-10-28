@@ -138,8 +138,6 @@ class Game:
                 self.draw_playing()
             elif self.state == GameState.PAUSED:
                 self.draw_paused()
-            elif self.state == GameState.CONFIG:
-                self.draw_config()
             elif self.state == GameState.HIGHSCORES:
                 self.draw_highscore_screen()
             elif self.state == GameState.WAVE_END:
@@ -291,7 +289,7 @@ class Game:
         # Proyectiles
         for proj in self.projectiles:
             if isinstance(proj, Projectile):
-                proj.draw(self._scene_surface, (0, 0))  # camera offset = 0 por ahora
+                proj.draw(self._scene_surface, (0, 0))  # camera offset = 0
             else:
                 # Compatibilidad con proyectiles viejos (dicts)
                 pygame.draw.circle(self._scene_surface, proj["color"], 
@@ -348,22 +346,6 @@ class Game:
         sub_rect = sub.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
         self.screen.blit(sub, sub_rect)
         pygame.display.flip()
-
-    def handle_events_config(self):
-        """Maneja los eventos durante el estado de configuración."""
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.change_state(self.previous_state or GameState.MENU)
-                elif event.key == pygame.K_RETURN:
-                    save_prefs()
-                    self.change_state(GameState.MENU)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if toggle_rect.collidepoint(pygame.mouse.get_pos()):
-                        self.toggle_fullscreen()
 
     def draw_highscore_screen(self):
         """Dibuja la pantalla de mejores puntuaciones."""
@@ -568,7 +550,7 @@ class Game:
             self._screen_shake_intensity *= 0.9
 
     def update_projectiles(self, dt):
-        """Actualiza proyectiles usando el nuevo sistema Projectile."""
+        """Actualiza proyectiles"""
         for proj in self.projectiles[:]:
             if isinstance(proj, Projectile):
                 proj.update(dt)
@@ -730,7 +712,7 @@ class Game:
         self.powerups.append(pickup_class(enemy.x, enemy.y))
 
     def _on_wave_completed(self, data: dict):
-        """Handler para evento WAVE_COMPLETED - añade bono de oro."""
+        """Handler para evento WAVE_COMPLETED"""
         gold_bonus = data.get("gold_bonus", 0)
         self.gold += gold_bonus
         self._screen_shake(SCREEN_SHAKE_MAX_INTENSITY, 0.4)

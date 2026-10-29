@@ -368,7 +368,7 @@ class Game:
             no_rect = no_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             self.screen.blit(no_text, no_rect)
 
-        back_text = self.font.render("PRECIONA ENTER PARA VOLVER", True, DARK_GRAY)
+        back_text = self.font.render("PRESIONA ENTER PARA VOLVER", True, DARK_GRAY)
         back_rect = back_text.get_rect(center=(WIDTH // 2, HEIGHT - 50))
         self.screen.blit(back_text, back_rect)
 
@@ -466,7 +466,7 @@ class Game:
         return stats.get(weapon, stats["pistol"])
 
     def fire_weapon(self, angle):
-        """Dispara el arma actual usando el sistema Strategy Pattern."""
+        """Dispara el arma actual"""
         weapon = self.current_weapon
         p = self.player
         if weapon.can_fire(pygame.time.get_ticks() / 1000.0):
@@ -558,7 +558,7 @@ class Game:
                 if proj.is_off_screen() or not proj.alive:
                     self.projectiles.remove(proj)
             else:
-                # Compatibilidad con proyectiles viejos (dicts)
+                # Compatibilidad con proyectiles dicts)
                 proj["x"] += proj["vx"] * dt
                 proj["y"] += proj["vy"] * dt
                 margin = 50
@@ -854,7 +854,7 @@ class Game:
             rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40))
             self.screen.blit(text, rect)
 
-        text = self.font.render("PRECIONA ENTER PARA VOLVER AL MENÚ", True, WHITE)
+        text = self.font.render("PRESIONA ENTER PARA VOLVER AL MENÚ", True, WHITE)
         rect = text.get_rect(center=(WIDTH // 2, HEIGHT - 50))
         self.screen.blit(text, rect)
 

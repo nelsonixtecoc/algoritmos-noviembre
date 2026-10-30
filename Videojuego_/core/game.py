@@ -29,7 +29,7 @@ class Game:
         self.config = load_prefs()  # Cargar configuración al iniciar
         self.wave_manager = WaveManager(self)  # WaveManager
         
-        # Sistema de armas (Strategy Pattern)
+        # Sistema de armaswe7
         self.weapons = {
             "pistol": create_weapon("pistol"),
             "shotgun": create_weapon("shotgun"),

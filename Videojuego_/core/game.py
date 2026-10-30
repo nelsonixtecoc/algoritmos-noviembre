@@ -474,11 +474,6 @@ class Game:
                 x=self.player["x"],
                 y=self.player["y"],
                 angle=angle,
-                damage_mult=self.player.get("damage_mult", 1.0),
-                cooldown_mult=self.player.get("cooldown_mult", 1.0),
-                spread_mult=self.player.get("spread_mult", 1.0),
-                speed_mult=self.player.get("speed_mult", 1.0),
-                pierce_bonus=self.player.get("pierce_bonus", 0),
             )
             self.projectiles.extend(projectiles)
             weapon.reset_cooldown(pygame.time.get_ticks() / 1000.0)
@@ -558,7 +553,7 @@ class Game:
                 if proj.is_off_screen() or not proj.alive:
                     self.projectiles.remove(proj)
             else:
-                # Compatibilidad con proyectiles dicts)
+                #Compatibilidad con proyectiles dicts
                 proj["x"] += proj["vx"] * dt
                 proj["y"] += proj["vy"] * dt
                 margin = 50

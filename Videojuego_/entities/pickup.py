@@ -120,8 +120,8 @@ class HealthPickup(Pickup):
 class SpeedPickup(Pickup):
     """Rayo que sube la velocidad del jugador."""
 
-    # No existe sprite de velocidad todavia -> se usa rectangulo de color.
-    _SPRITE = _ASSETS_DIR / "ui" / "speed.png"
+    # Sprite del rayo; si falta el archivo se usa un rectángulo de color de respaldo.
+    _SPRITE = _ASSETS_DIR / "ui" / "lightning.png"
     _FALLBACK_COLOR = CYAN
 
     def apply(self, player: dict, barriers=None) -> None:

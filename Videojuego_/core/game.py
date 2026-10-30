@@ -238,11 +238,11 @@ class Game:
 
     def handle_events_name_entry(self):
         events = pygame.event.get()
-        self.handle_global_events(events)
-        #filtered_events = [
-            #e for e in events
-            #if not (e.type == pygame.KEYDOWN and e.key == pygame.k_f)
-        #]
+        filtered_events = [
+            e for e in events
+            if not (e.type == pygame.KEYDOWN and e.key == pygame.K_f)
+        ]
+        self.handle_global_events(filtered_events)
         if not hasattr(self, 'name_input'):
             self.name_input = ""
         for event in events:

@@ -1,5 +1,13 @@
 [
   {
+    "name": "GAS",
+    "score": 3020
+  },
+  {
+    "name": "HAS",
+    "score": 2960
+  },
+  {
     "name": "CRI",
     "score": 2950
   },
@@ -10,9 +18,5 @@
   {
     "name": "MHI",
     "score": 860
-  },
-  {
-    "name": "FFF",
-    "score": 240
   }
 ]

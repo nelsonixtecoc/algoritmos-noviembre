@@ -666,7 +666,7 @@ class Game:
                 # El evento ENEMY_DIED ya se publica en apply_damage
 
     def damage_player(self, amount):
-        """Compatibilidad hacia atrás - usa el nuevo sistema apply_damage."""
+        """le aplica daño al jugador cuando es golpeado"""
         if not self.player or self.player["invuln_timer"] > 0:
             return
         

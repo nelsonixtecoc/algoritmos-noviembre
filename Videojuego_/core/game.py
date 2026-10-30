@@ -101,8 +101,12 @@ class Game:
     def spawn_barriers(self):
         """crear 4 barreras fijas en su posición por defecto"""
         from entities.barrier import Barrier
+        self.barriers = [b for b in self.barriers if b.alive]
+        occupied = {b.center for b in self.barriers}
         for pos in Barrier.default_positions():
-            self.barriers.append(Barrier(*pos))
+            snapped = Barrier.snap_to_grid(pos)
+            if snapped not in occupied:
+                self.barriers.append(Barrier(*snapped))
 
     # run
     def run(self):
@@ -406,6 +410,7 @@ class Game:
         # Siguiente oleada tras el mensaje "Fin de la Oleada"
         elif old_state == GameState.WAVE_END and new_state == GameState.PLAYING:
             self.wave_number += 1
+            self.spawn_barriers()
             self.wave_manager.start_wave(self.wave_number)
 
     def reset_game(self):

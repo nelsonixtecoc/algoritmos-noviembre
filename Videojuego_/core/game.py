@@ -239,6 +239,10 @@ class Game:
     def handle_events_name_entry(self):
         events = pygame.event.get()
         self.handle_global_events(events)
+        #filtered_events = [
+            #e for e in events
+            #if not (e.type == pygame.KEYDOWN and e.key == pygame.k_f)
+        #]
         if not hasattr(self, 'name_input'):
             self.name_input = ""
         for event in events:
@@ -802,6 +806,11 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.KEYUP:
+                self.keys_pressed.discard(event.key)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    self.mouse_pressed = False
 
     def _update_wave_end(self, dt: float):
         """Avanza el temporizador de 'Fin de la Oleada' y pasa a PLAYING al terminar."""

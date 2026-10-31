@@ -77,16 +77,6 @@ class Weapon(ABC):
         """Resetea el timer de cooldown."""
         self.last_shot_time = current_time
     
-    def reload(self, current_time: float) -> bool:
-        """
-        Inicia recarga. Retorna True si empezó a recargar.
-        """
-        if self.max_ammo <= 0 or self.ammo >= self.max_ammo or self._reloading:
-            return False
-        self._reloading = True
-        self._reload_timer = self.reload_time
-        return True
-    
     def update(self, dt: float, current_time: float):
         """Actualiza timers internos (llamar cada frame)."""
         # Cooldown

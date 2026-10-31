@@ -11,7 +11,7 @@ from config import *
 class Weapon(ABC):
     """Arma base - define interfaz común para todas las armas."""
     
-    # Stats base (sobrescribir en subclases)
+    # Stats base
     name: str = "base"
     cooldown: float = 1.0
     damage: int = 10
@@ -22,7 +22,7 @@ class Weapon(ABC):
     explosion_radius: float = 0.0
     color: tuple = (255, 255, 255)
     
-    # Ammo system (opcional)
+    # Ammo system
     max_ammo: int = -1  # -1 = infinito
     ammo: int = -1
     reload_time: float = 2.0
